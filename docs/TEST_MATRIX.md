@@ -2,6 +2,10 @@
 
 ## Android v0.111.0 BetterDefect 窄范围兼容开发（2026-09-28）
 
+- 真机发现 v0.111.0 的 RitsuLib 先把 `CardModel.OnPlayWrapper` 的虚调用改写为 `CardOnPlayHook.RunCardOnPlayHooks`，使 BetterDefect v0.11.65 原中央 transpiler 替换 0 处。BetterDefect v0.11.66 改为注册 `ICardOnPlayHookListener`，保留 RitsuLib 的前后钩子；四模组启动日志显示监听器注册成功且没有中央补丁失败。
+- REDMI K80 Pro / v0.111.0 真实战斗：临时测试模组使用 `CardCmd.AutoPlay` 打出改造寒流，日志记录 `cost=2 damage=12 hpDelta=12 frostCount=2`、PASS；求解器在只有寒流改造启用的存档成功搜索 571 条路线并显示路线；点击执行本回合被预期的“尚未完成实机结算对账”保护挡下。证据：`../.port-build/mobile-betterdefect-compat-20260928/harness-final.log`、`solver-route.png`、`deploy-block.png`。原手机存档、设置和两个模组 DLL 已从测试前 tar 恢复，临时测试模组删除。
+- 上述只验证了寒流未升级、空球位的一次实际效果和原版开局路线搜索，**没有完成**寒流出现在求解器路线中的逐状态差分、升级版／球位满、其余 68 张改造或新增卡；自动出牌继续阻断。
+
 - `BetterDefectMobileCompatibility` 源码审阅 v0.11.65 的中央出牌桥接、全局改造状态与寒流结算；仅允许无改造或只改造寒流的原版卡路线。新增卡、原版被无条件替换的四张牌、随机生成卡的牌／药水、未知能力与其他改造保持拒绝。
 - 寒流改造的第二颗冰霜球已进入预测镜像。Android 与非 Android Release 编译通过，均 0 警告、0 错误；`git diff --check` 通过。
 - PC v0.107.1 隔离 headless 真游戏测试：BetterDefect v0.11.65 的**已安装 DLL** 在打出改造「寒流」时报 `MissingMethodException: AttackCommand.FromCard(CardModel, CardPlay)`；原因是该 DLL 含 v110 双参数 ABI。用 PC v0.107.1 依赖重新编译后，与下载目录现有 PC v0.11.65 ZIP 内 DLL 的 SHA-256 完全一致（`E6E7D94A...`），重复测试通过：2 费、12 伤、目标实扣 12 HP、生成 2 个冰霜球。证据保存在本地 `.autotest/pc-bdcompat-test-20260928/pc-godot-2.log`（失败）及 `pc-godot-3.log`（通过）；测试未更改正在运行的用户游戏及存档。

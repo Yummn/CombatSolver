@@ -16,7 +16,9 @@ namespace CombatSolver;
 internal static class BetterDefectMobileCompatibility
 {
     private const string ModId = "BetterDefect";
-    private const string ReviewedVersion = "0.11.65";
+    private const string ReviewedVersion = "0.11.66";
+    // Runtime registration is a stronger compatibility signal than MVID:
+    // reproducible builds of the same source can have different module IDs.
     private static readonly HashSet<Type> AlwaysReplacedCards =
         [typeof(Shatter), typeof(TeslaCoil), typeof(Fuel), typeof(Scrape)];
     private static readonly HashSet<Type> PotentialCardGenerators =
@@ -59,6 +61,11 @@ internal static class BetterDefectMobileCompatibility
         Assembly assembly = mod.assemblies.FirstOrDefault(item =>
             item.GetType("BetterDefect.BdCardUpgradeState", false) is not null)
             ?? throw Unsupported("找不到改造状态接口");
+        Type? listenerType = assembly.GetType("BetterDefect.BdRitsuCardOnPlayListener", false);
+        PropertyInfo? readyProperty = listenerType?.GetProperty(
+            "IsRegistered", BindingFlags.Static | BindingFlags.NonPublic);
+        if (readyProperty?.GetValue(null) is not true)
+            Reject("BetterDefect 的手机 v0.111.0 出牌钩子未注册");
         Type stateType = assembly.GetType("BetterDefect.BdCardUpgradeState", true)!;
         MethodInfo countMethod = stateType.GetMethod("GetVersionUpgradeCount", BindingFlags.Public | BindingFlags.Static)
             ?? throw Unsupported("找不到改造点数接口");
