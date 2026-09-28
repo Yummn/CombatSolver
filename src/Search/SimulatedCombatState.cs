@@ -1525,6 +1525,11 @@ internal sealed partial class SimulatedCombatState
     {
         energyCost = 0;
         starCost = 0;
+        // BetterDefect's 58 saved encyclopedia choices are not 58 active
+        // effects. Search may use ordinary cards, but must not branch through
+        // a transformed card until its actual OnPlay has a reviewed mirror.
+        if (!BetterDefectMobileCompatibility.CanSolverPlay(card.Preview))
+            return false;
         if (IsCardPlayPrevented(simulator, card))
             return false;
         if (!simulator.CanPlay(card, out energyCost, out starCost))

@@ -2779,15 +2779,6 @@ internal static partial class SolverController
     {
         if (RejectUnsupportedMobileMod(host, state))
             return;
-        if (BetterDefectMobileCompatibility.RequiresDeploymentValidation)
-        {
-            _combat.FullAutoEnabled = false;
-            SolverOverlay.RefreshControls();
-            SolverOverlay.ShowBlockingError(host, SolverText.Get(
-                "BetterDefect 兼容路线尚未完成实机结算对账；当前仅供查看，不会自动出牌。"));
-            Entry.Logger.Warn("[CombatSolver/Mobile] DEPLOY_REJECT reason=better_defect_live_differential_pending");
-            return;
-        }
         if (MobilePortPolicy.IsMobile
             && (result.Snapshot.HasRisk || result.Forecast.HasUnsupportedIntent
                 || result.UnmirroredDetails().Count > 0))

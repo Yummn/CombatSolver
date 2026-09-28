@@ -1098,6 +1098,9 @@ internal static class SolverOverlay
             _summaryText.Text = SolverUiTokens.AdaptRichTextToActiveTheme(snapshot.SummaryText)
                 + (snapshot.Turns.Count > SolverWeights.UiTurnRows
                     ? "\n" + SolverText.Format($"另有 {snapshot.Turns.Count - SolverWeights.UiTurnRows} 回合未展开显示")
+                    : string.Empty)
+                + (BetterDefectMobileCompatibility.TransformedTypesInCombat > 0
+                    ? "\n" + SolverText.Format($"[color={SolverUiTokens.Palette.WarningHex}]本场有 {BetterDefectMobileCompatibility.TransformedTypesInCombat} 种未镜像改造牌：路线不会自动打出这些牌。[/color]")
                     : string.Empty);
         }
         if (_progressText != null)

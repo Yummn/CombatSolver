@@ -1,5 +1,11 @@
 # CombatSolver 测试清单
 
+## Android v0.111.0 BetterDefect 安全自动路线（2026-09-29）
+
+- BetterDefect 保存的 59 项卡牌改造不再作为全局拒绝条件；根捕获读取各卡类型的实际改造状态，搜索动作生成排除未镜像改造牌，直接调用镜像时仍会拒绝该牌。已生效的改造 Power、未知卡／球仍保持拒绝；自动执行不再无条件被 BetterDefect 拦截。
+- REDMI K80 Pro 实战，游戏 v0.111.0、BetterDefect v0.11.66、RitsuLib v0.6.2：开发构建在启用 59 项改造的原始偏好下完成故障机器人首战搜索；点击求解器的「执行本回合」后实际打出双重释放并击杀最后一只噬尸蛞蝓。随后替换为最终 UI 构建，再在下一场双蛞蝓战斗中完成搜索及「执行本回合」，实战生成一个闪电球、目标 25→19 HP、进入第二回合，进程仍运行。截图：`../.port-build/mobile-betterdefect-compat-20260928/solver-safe-deploy.png`、`solver-final-search.png`、`solver-final-deployed.png`。本测试没有打出任何改造牌，不是其预测正确性的证据。
+- `dotnet build -c Release -p:CombatSolverMobilePort=true` 对 v0.111.0 程序集编译 0 警告、0 错误；`git diff --check` 通过。未进行全 69 改造卡／27 新增卡、多模组组合及整局策略质量验证。
+
 ## Android v0.111.0 BetterDefect 窄范围兼容开发（2026-09-28）
 
 - 最终版本配对复测：手机 v0.111.0 加载正式 BetterDefect v0.11.66、RitsuLib v0.6.2 与 CombatSolver `mobile-v111-0.47.1-preview.3`；仅启用「寒流」改造，真实故障机器人首战可进入并完成求解器搜索。点击「执行本回合」显示“尚未完成实机结算对账；当前仅供查看，不会自动出牌”，没有让未经验证的预测控制游戏。截图：`../.port-build/mobile-betterdefect-compat-20260928/corrected-search.png` 和 `corrected-deploy-block.png`，启动及搜索日志：同目录 `corrected-launch.log`、`corrected-search.log`。此项**不等于**寒流预测的逐状态差分，更不等于 BetterDefect 全卡兼容。
