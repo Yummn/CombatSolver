@@ -43,6 +43,7 @@ internal static partial class CardOnPlayMirrors
         PredictedCard card,
         CardPlay cardPlay)
     {
+        BetterDefectMobileCompatibility.ValidateCardOnPlay(card.MutablePreview);
         // The mutable preview is the receiver because OnPlay handlers may mutate the played card.
         // CardOnPlayMirrorContext maps its source back to the original card and exposes that same
         // original model as the StateStore key.

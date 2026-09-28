@@ -107,20 +107,6 @@ internal static class PredictionModPatchAudit
     {
         foreach (Mod mod in mods)
         {
-            // BetterDefect v0.11.x replaces card execution through a central
-            // Android CardPlayAction patch. Auditing CardModel.OnPlay alone does
-            // not see that patch, so an apparently valid route can be wrong.
-            // Fail closed until its transformed cards, powers and orbs have
-            // branch-local mirrors and actual/predicted differential coverage.
-            if (MobilePortPolicy.IsMobile
-                && mod.manifest is { id: "BetterDefect" } betterDefectManifest)
-            {
-                throw new IncompatibleGameplayModException(
-                    betterDefectManifest.id,
-                    betterDefectManifest.name ?? "BetterDefect",
-                    "central card-play dispatcher has no prediction adapter",
-                    "combat");
-            }
             string? incompatibleId = IncompatibleModIds.FirstOrDefault(id =>
                 string.Equals(mod.manifest?.id, id, StringComparison.OrdinalIgnoreCase)
                 || mod.assemblies.Any(assembly => string.Equals(

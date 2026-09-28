@@ -908,7 +908,7 @@ internal static partial class SolverController
     public static void RequestSearch(NGame host, CombatState state, SearchReason reason, bool deployWhenReady = false)
     {
         AssertMainThread();
-        if (RejectUnsupportedMobileMod(host))
+        if (RejectUnsupportedMobileMod(host, state))
             return;
         if (reason == SearchReason.Manual)
             _combat.RouteFrozen = false;
@@ -1373,16 +1373,23 @@ internal static partial class SolverController
     }
 
     private static string FormatIncompatibleModFailure(IncompatibleGameplayModException incompatible)
-        => $"[color={SolverUiTokens.Palette.DangerHex}]" +
-           SolverText.Format($"检测到尚未适配战斗预测的模组：{EscapeRichText(incompatible.PlayerFacingModName)}。为避免错误路线，本场已停止计算和自动出牌。") + "[/color]";
+    {
+        string detail = string.Equals(incompatible.ModId, "BetterDefect", StringComparison.OrdinalIgnoreCase)
+            ? SolverText.Format($"原因：{EscapeRichText(incompatible.Subject)}。")
+            : string.Empty;
+        return $"[color={SolverUiTokens.Palette.DangerHex}]" +
+               SolverText.Format($"检测到尚未适配战斗预测的模组：{EscapeRichText(incompatible.PlayerFacingModName)}。为避免错误路线，本场已停止计算和自动出牌。") +
+               detail + "[/color]";
+    }
 
-    private static bool RejectUnsupportedMobileMod(NGame host)
+    private static bool RejectUnsupportedMobileMod(NGame host, CombatState state)
     {
         if (!MobilePortPolicy.IsMobile)
             return false;
         try
         {
             PredictionModPatchAudit.ValidateLoadedMods(ModManager.GetLoadedMods());
+            BetterDefectMobileCompatibility.Validate(state);
             return false;
         }
         catch (IncompatibleGameplayModException incompatible)
@@ -1406,7 +1413,7 @@ internal static partial class SolverController
     public static void RequestDeploy(NGame host, CombatState state)
     {
         AssertMainThread();
-        if (RejectUnsupportedMobileMod(host))
+        if (RejectUnsupportedMobileMod(host, state))
             return;
         SolverDispatcher.Ensure(host);
         if (_deployment != null)
@@ -1477,7 +1484,7 @@ internal static partial class SolverController
     public static void SetFullAuto(NGame host, CombatState state, bool enabled)
     {
         AssertMainThread();
-        if (enabled && RejectUnsupportedMobileMod(host))
+        if (enabled && RejectUnsupportedMobileMod(host, state))
             return;
         SolverDispatcher.Ensure(host);
         if (!enabled)
@@ -2770,8 +2777,17 @@ internal static partial class SolverController
 
     private static void StartDeployment(NGame host, CombatState state, SolverResult result)
     {
-        if (RejectUnsupportedMobileMod(host))
+        if (RejectUnsupportedMobileMod(host, state))
             return;
+        if (BetterDefectMobileCompatibility.RequiresDeploymentValidation)
+        {
+            _combat.FullAutoEnabled = false;
+            SolverOverlay.RefreshControls();
+            SolverOverlay.ShowBlockingError(host, SolverText.Get(
+                "BetterDefect 兼容路线尚未完成实机结算对账；当前仅供查看，不会自动出牌。"));
+            Entry.Logger.Warn("[CombatSolver/Mobile] DEPLOY_REJECT reason=better_defect_live_differential_pending");
+            return;
+        }
         if (MobilePortPolicy.IsMobile
             && (result.Snapshot.HasRisk || result.Forecast.HasUnsupportedIntent
                 || result.UnmirroredDetails().Count > 0))

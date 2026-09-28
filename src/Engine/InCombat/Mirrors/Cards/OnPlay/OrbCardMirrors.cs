@@ -41,6 +41,8 @@ internal static class OrbCardMirrors
         if (context.Simulator.HasPendingChoice)
             return;
         context.Simulator.OrbChannel<FrostOrb>(card.Owner);
+        if (BetterDefectMobileCompatibility.ColdSnapTransformed && !context.Simulator.HasPendingChoice)
+            context.Simulator.OrbChannel<FrostOrb>(card.Owner);
     }
 
     public static void ConsumingShadowOnPlay(ConsumingShadow card, CardOnPlayMirrorContext context)

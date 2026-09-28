@@ -1,5 +1,11 @@
 # CombatSolver 测试清单
 
+## Android v0.111.0 BetterDefect 窄范围兼容开发（2026-09-28）
+
+- `BetterDefectMobileCompatibility` 源码审阅 v0.11.65 的中央出牌桥接、全局改造状态与寒流结算；仅允许无改造或只改造寒流的原版卡路线。新增卡、原版被无条件替换的四张牌、随机生成卡的牌／药水、未知能力与其他改造保持拒绝。
+- 寒流改造的第二颗冰霜球已进入预测镜像。Android 与非 Android Release 编译通过，均 0 警告、0 错误；`git diff --check` 通过。
+- **未通过实机 actual-vs-predicted 对账**：本次 ADB 无设备，PC 游戏进程正在运行且未介入用户当前对局。因此 BetterDefect 的路线执行／全自动仍被阻断，不能把这项记为可用的自动出牌兼容。
+
 ## 0.47.1 紧急回归修复（2026-09-27）
 
 - `FIXED-PREFIX-TURN-LOSS` / `01ed4188c8804eedab36e7658de62a57` Passed：固定前缀先掉血再结束首回合，所选路线该回合标注与模拟累计掉血一致；实例已清理。

@@ -64,6 +64,7 @@ internal sealed class PredictionModHookSubscriberCapture
             ValidateSubscriber(subscriber, "run");
         foreach (AbstractModel subscriber in combatSubscribers)
             ValidateSubscriber(subscriber, "combat");
+        BetterDefectMobileCompatibility.Validate(combat);
         AdaptedOnPlaySnapshot? onPlay = PredictionModPatchAudit.CaptureCardOnPlay(EnumerateAuditableCards(runState, combat));
 
         Dictionary<Player, int> maxHandSizes = [];
