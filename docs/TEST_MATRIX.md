@@ -4,7 +4,8 @@
 
 - `BetterDefectMobileCompatibility` 源码审阅 v0.11.65 的中央出牌桥接、全局改造状态与寒流结算；仅允许无改造或只改造寒流的原版卡路线。新增卡、原版被无条件替换的四张牌、随机生成卡的牌／药水、未知能力与其他改造保持拒绝。
 - 寒流改造的第二颗冰霜球已进入预测镜像。Android 与非 Android Release 编译通过，均 0 警告、0 错误；`git diff --check` 通过。
-- **未通过实机 actual-vs-predicted 对账**：本次 ADB 无设备，PC 游戏进程正在运行且未介入用户当前对局。因此 BetterDefect 的路线执行／全自动仍被阻断，不能把这项记为可用的自动出牌兼容。
+- PC v0.107.1 隔离 headless 真游戏测试：BetterDefect v0.11.65 的**已安装 DLL** 在打出改造「寒流」时报 `MissingMethodException: AttackCommand.FromCard(CardModel, CardPlay)`；原因是该 DLL 含 v110 双参数 ABI。用 PC v0.107.1 依赖重新编译后，与下载目录现有 PC v0.11.65 ZIP 内 DLL 的 SHA-256 完全一致（`E6E7D94A...`），重复测试通过：2 费、12 伤、目标实扣 12 HP、生成 2 个冰霜球。证据保存在本地 `.autotest/pc-bdcompat-test-20260928/pc-godot-2.log`（失败）及 `pc-godot-3.log`（通过）；测试未更改正在运行的用户游戏及存档。
+- **没有完成 CombatSolver + BetterDefect PC 集成测试**：当前 PC 游戏是 v0.107.1，而本分支求解器目标是 v0.111.0；以 PC v0.107.1 程序集编译求解器有 39 项游戏 API 不兼容，不能把 BetterDefect 单卡原生测试冒充求解器差分验证。Android v0.111.0 actual-vs-predicted 对账仍未通过，BetterDefect 的路线执行／全自动继续阻断。
 
 ## 0.47.1 紧急回归修复（2026-09-27）
 
