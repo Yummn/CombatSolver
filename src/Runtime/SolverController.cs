@@ -9,6 +9,7 @@ using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Modding;
 using MegaCrit.Sts2.Core.Multiplayer.Game;
 using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Runs;
@@ -907,11 +908,8 @@ internal static partial class SolverController
     public static void RequestSearch(NGame host, CombatState state, SearchReason reason, bool deployWhenReady = false)
     {
         AssertMainThread();
-        if (MobilePortPolicy.AdviceOnly && (deployWhenReady || reason == SearchReason.Deploy))
-        {
-            Entry.Logger.Warn("[CombatSolver/Mobile] Deployment request rejected in advice-only build.");
+        if (RejectUnsupportedMobileMod(host))
             return;
-        }
         if (reason == SearchReason.Manual)
             _combat.RouteFrozen = false;
         if (_combat.ShowcaseMode && reason != SearchReason.AutoTurnStart)
@@ -1376,7 +1374,26 @@ internal static partial class SolverController
 
     private static string FormatIncompatibleModFailure(IncompatibleGameplayModException incompatible)
         => $"[color={SolverUiTokens.Palette.DangerHex}]" +
-           SolverText.Format($"检测到不兼容的第三方 Mod：{EscapeRichText(incompatible.PlayerFacingModName)}。建议卸载该 Mod 并重启游戏后再使用求解器。") + "[/color]";
+           SolverText.Format($"检测到尚未适配战斗预测的模组：{EscapeRichText(incompatible.PlayerFacingModName)}。为避免错误路线，本场已停止计算和自动出牌。") + "[/color]";
+
+    private static bool RejectUnsupportedMobileMod(NGame host)
+    {
+        if (!MobilePortPolicy.IsMobile)
+            return false;
+        try
+        {
+            PredictionModPatchAudit.ValidateLoadedMods(ModManager.GetLoadedMods());
+            return false;
+        }
+        catch (IncompatibleGameplayModException incompatible)
+        {
+            _combat.FullAutoEnabled = false;
+            SolverOverlay.ShowBlockingError(host, FormatIncompatibleModFailure(incompatible));
+            SolverOverlay.RefreshControls();
+            Entry.Logger.Warn($"[CombatSolver/Mobile] SEARCH_REJECT mod={incompatible.ModId} reason=missing_prediction_adapter");
+            return true;
+        }
+    }
 
     internal static string FormatSearchFailureForTesting(
         Exception exception,
@@ -1389,11 +1406,8 @@ internal static partial class SolverController
     public static void RequestDeploy(NGame host, CombatState state)
     {
         AssertMainThread();
-        if (MobilePortPolicy.AdviceOnly)
-        {
-            Entry.Logger.Warn("[CombatSolver/Mobile] RequestDeploy rejected in advice-only build.");
+        if (RejectUnsupportedMobileMod(host))
             return;
-        }
         SolverDispatcher.Ensure(host);
         if (_deployment != null)
         {
@@ -1463,11 +1477,8 @@ internal static partial class SolverController
     public static void SetFullAuto(NGame host, CombatState state, bool enabled)
     {
         AssertMainThread();
-        if (MobilePortPolicy.AdviceOnly && enabled)
-        {
-            Entry.Logger.Warn("[CombatSolver/Mobile] Full-auto rejected in advice-only build.");
+        if (enabled && RejectUnsupportedMobileMod(host))
             return;
-        }
         SolverDispatcher.Ensure(host);
         if (!enabled)
         {
@@ -1571,8 +1582,6 @@ internal static partial class SolverController
     public static void SetAutomaticCalculationEnabled(bool enabled, bool persist = true)
     {
         AssertMainThread();
-        if (MobilePortPolicy.AdviceOnly)
-            enabled = false;
         if (persist)
         {
             SolverSettings.Update(SolverSettings.Current with
@@ -2761,9 +2770,16 @@ internal static partial class SolverController
 
     private static void StartDeployment(NGame host, CombatState state, SolverResult result)
     {
-        if (MobilePortPolicy.AdviceOnly)
+        if (RejectUnsupportedMobileMod(host))
+            return;
+        if (MobilePortPolicy.IsMobile
+            && (result.Snapshot.HasRisk || result.Forecast.HasUnsupportedIntent
+                || result.UnmirroredDetails().Count > 0))
         {
-            Entry.Logger.Warn("[CombatSolver/Mobile] StartDeployment rejected in advice-only build.");
+            _combat.FullAutoEnabled = false;
+            SolverOverlay.RefreshControls();
+            SolverOverlay.Show(host, SolverText.Get("路线含未适配效果。为避免错误操作，手机端已停止自动出牌；仍可查看路线。"));
+            Entry.Logger.Warn("[CombatSolver/Mobile] DEPLOY_REJECT reason=unmirrored_prediction_risk");
             return;
         }
         bool hasCurrentTurnPlan = result.BestNode.Actions.Any(action =>

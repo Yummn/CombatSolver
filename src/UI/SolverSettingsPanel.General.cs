@@ -182,7 +182,6 @@ internal sealed partial class SolverSettingsPanel
         _solverEnabled.Toggled += OnSolverEnabledToggled;
         AddBasicRow(solverGrid, SolverText.Get("启用求解器"), _solverEnabled);
         _automaticCalculation = CreateToggle();
-        _automaticCalculation.Disabled = MobilePortPolicy.AdviceOnly;
         _automaticCalculation.Toggled += OnAutomaticCalculationToggled;
         AddBasicRow(
             solverGrid,

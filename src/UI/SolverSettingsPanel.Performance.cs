@@ -139,6 +139,7 @@ internal sealed partial class SolverSettingsPanel
         _performancePreset = CreatePerformancePresetInput();
         AddBasicRow(budgetGrid, SolverText.Get("性能预设"), _performancePreset);
         _beamWidthPortfolioEnabled = CreateToggle();
+        _beamWidthPortfolioEnabled.Disabled = MobilePortPolicy.IsMobile;
         _reloadInputs.Add(data =>
             _beamWidthPortfolioEnabled.ButtonPressed = data.UseBeamWidthPortfolio);
         _beamWidthPortfolioEnabled.Toggled += enabled =>
@@ -158,6 +159,7 @@ internal sealed partial class SolverSettingsPanel
             _beamWidthPortfolioEnabled,
             SolverText.Get("先按当前性能预设正常搜索。首轮较快完成、路线仍有改善空间且剩余时间、节点和内存充足时，再尝试几种不同的搜索方式并选择更优路线。可能提高路线质量，也会增加耗时和内存占用；不会突破当前设置的时间和节点上限。"));
         _noveltyPortfolioEnabled = CreateToggle();
+        _noveltyPortfolioEnabled.Disabled = MobilePortPolicy.IsMobile;
         _reloadInputs.Add(data => _noveltyPortfolioEnabled.ButtonPressed = data.UseNoveltyPortfolio);
         _noveltyPortfolioEnabled.Toggled += enabled =>
         {
@@ -177,6 +179,7 @@ internal sealed partial class SolverSettingsPanel
         AddBasicRow(budgetGrid, SolverText.Get("多策略路线搜索（实验）"), _noveltyPortfolioEnabled,
             SolverText.Get("先用部分预算尝试不同路线，再用剩余预算进行常规搜索，并按当前战损、成长和药水规则选优。可能更快找到好路线，也可能因预算分配而改变结果。与常规搜索共用时间和节点上限；下次搜索生效。"));
         _earlyTurnExplorationEnabled = CreateToggle();
+        _earlyTurnExplorationEnabled.Disabled = MobilePortPolicy.IsMobile;
         _reloadInputs.Add(data =>
             _earlyTurnExplorationEnabled.ButtonPressed = data.UseEarlyTurnExploration);
         _earlyTurnExplorationEnabled.Toggled += enabled =>
@@ -205,6 +208,7 @@ internal sealed partial class SolverSettingsPanel
             SolverText.Get("选择性能预设与并行度；详细参数可在下方展开。"), budgetGrid);
         GridContainer memoryGrid = CreateSettingsGrid();
         CheckButton automaticGc = CreateToggle();
+        automaticGc.Disabled = MobilePortPolicy.IsMobile;
         _reloadInputs.Add(data => automaticGc.ButtonPressed = data.AutoConfigureServerGc);
         _reloadInputs.Add(_ => _gcStartupStatus.Text = DescribeGcStartup());
         automaticGc.Toggled += enabled =>
@@ -261,7 +265,8 @@ internal sealed partial class SolverSettingsPanel
         AddSettingsSection(content, SolverText.Get("搜索停止条件"),
             SolverText.Get("战损阈值按整场累计扣血计算，下次搜索生效。"), stopGrid);
         string memoryDescription = SolverText.Get("推荐使用多核内存回收（默认开启）：大幅降低内存占用并加速复杂搜索。若未生效，则备用下方的暂缓回收策略。主界面内存条右侧可随时手动释放内存。");
-        AddSettingsSection(content, SolverText.Get("内存管理"), memoryDescription, memoryGrid);
+        if (!MobilePortPolicy.IsMobile)
+            AddSettingsSection(content, SolverText.Get("内存管理"), memoryDescription, memoryGrid);
 
         _advancedParametersToggle = SolverUiTokens.CreateButton(
             SolverText.Get("展开自定义参数"),
@@ -411,11 +416,15 @@ internal sealed partial class SolverSettingsPanel
     private OptionButton CreatePerformancePresetInput()
     {
         OptionButton input = CreateOptionInput(260);
-        input.AddItem(SolverText.Get("低档（60 秒）"), (int)SolverPerformancePreset.Low);
-        input.AddItem(SolverText.Get("中档（默认，120 秒）"), (int)SolverPerformancePreset.Medium);
-        input.AddItem(SolverText.Get("高档（180 秒）"), (int)SolverPerformancePreset.High);
-        input.AddItem(SolverText.Get("极高（300 秒）"), (int)SolverPerformancePreset.VeryHigh);
+        if (!MobilePortPolicy.IsMobile)
+        {
+            input.AddItem(SolverText.Get("低档（60 秒）"), (int)SolverPerformancePreset.Low);
+            input.AddItem(SolverText.Get("中档（默认，120 秒）"), (int)SolverPerformancePreset.Medium);
+            input.AddItem(SolverText.Get("高档（180 秒）"), (int)SolverPerformancePreset.High);
+            input.AddItem(SolverText.Get("极高（300 秒）"), (int)SolverPerformancePreset.VeryHigh);
+        }
         input.AddItem(SolverText.Get("自定义"), (int)SolverPerformancePreset.Custom);
+        input.Disabled = MobilePortPolicy.IsMobile;
         input.ItemSelected += index =>
         {
             if (_loading)
@@ -432,8 +441,10 @@ internal sealed partial class SolverSettingsPanel
     {
         OptionButton input = CreateOptionInput();
         input.AddItem(SolverText.Get("关闭（单线程）"), 1);
-        for (int degree = 2; degree <= SolverWeights.MaximumSearchMaxDegreeOfParallelism; degree++)
-            input.AddItem(degree.ToString(CultureInfo.InvariantCulture), degree);
+        if (!MobilePortPolicy.IsMobile)
+            for (int degree = 2; degree <= SolverWeights.MaximumSearchMaxDegreeOfParallelism; degree++)
+                input.AddItem(degree.ToString(CultureInfo.InvariantCulture), degree);
+        input.Disabled = MobilePortPolicy.IsMobile;
         _reloadInputs.Add(data =>
         {
             int degree = data.SearchMaxDegreeOfParallelism

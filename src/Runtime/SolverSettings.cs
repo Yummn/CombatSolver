@@ -234,7 +234,7 @@ internal static class SolverSettings
         SolverSettingsData loaded = persisted
             ? JsonSerializer.Deserialize<SolverSettingsData>(File.ReadAllText(path), JsonOptions)
                 ?? throw new InvalidDataException("CombatSolver settings file contained null.")
-            : new SolverSettingsData();
+            : MobilePortPolicy.InitialSettings();
         SolverSettingsData migrated = MobilePortPolicy.Constrain(ApplyCurrentPerformanceMigration(loaded));
         Validate(migrated);
         lock (Sync)

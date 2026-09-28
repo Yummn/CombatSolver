@@ -4051,3 +4051,4 @@ pwsh -NoProfile -File tools\run-unattended-test.ps1 -ScenarioId MONSTER-MOVES-BA
 - 在线服务 14 项测试通过，包含旧心跳、管理鉴权、持久登录、统计加权、筛选和战绩数据库重启恢复。
 - 日志服务 19 项测试通过，包含提交时战绩快照及小数百分比筛选；Windows 测试进程退出仍有原有 SQLite 临时文件清理占用提示。
 - UI-LOCALIZATION `42dce92d333e46e482ba556b9959e4eb` Passed，24.85 秒，覆盖 322 条中英资源与 headless 统计节点隔离。不是可见游戏结算/交互或帧率验收。
+- `MOBILE-V111-CONTROLS`（真机，REDMI K80 Pro / 游戏 v0.111.0 / RitsuLib 0.6.2）：仅启用 CombatSolver 和 RitsuLib，原版铁甲首战手动搜索并执行首回合，预计掉血 8，实际 64→56；随后点击全自动，战斗胜利并到达奖励界面，结算 62/80。`MOBILE-V111-BETTERDEFECT-GUARD`：加启 BetterDefect v0.11.65 后进入下一场战斗，求解器拒绝搜索，展开面板显示“尚未适配战斗预测”的错误，未自动出牌。证据截图在本地 `.port-build/mobile-full-test-20260928/`；这只验证控制链和已知不兼容防线，不覆盖新卡、改造、随机性、所有遗物与药水或严格差分。

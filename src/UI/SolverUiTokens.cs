@@ -66,10 +66,10 @@ internal static class SolverUiTokens
 
     public static class Type
     {
-        public static int Title => MobilePortPolicy.AdviceOnly ? 22 : 16;
-        public static int Metric => MobilePortPolicy.AdviceOnly ? 19 : 15;
-        public static int Body => MobilePortPolicy.AdviceOnly ? 18 : 14;
-        public static int Caption => MobilePortPolicy.AdviceOnly ? 16 : 13;
+        public static int Title => MobilePortPolicy.IsMobile ? 22 : 16;
+        public static int Metric => MobilePortPolicy.IsMobile ? 19 : 15;
+        public static int Body => MobilePortPolicy.IsMobile ? 18 : 14;
+        public static int Caption => MobilePortPolicy.IsMobile ? 16 : 13;
         public const int Outline = 0;
     }
 
@@ -90,7 +90,7 @@ internal static class SolverUiTokens
         public const float MetricsDamageWidth = 92f;
         public const float MetricsHpWidth = 64f;
         public const float MetricsEnergyWidth = 52f;
-        public static float ButtonHeight => MobilePortPolicy.AdviceOnly ? 48f : 34f;
+        public static float ButtonHeight => MobilePortPolicy.IsMobile ? 48f : 34f;
         public const float ResizeEdgeThickness = 8f;
         public const int ResizeGripSize = 20;
     }
@@ -139,7 +139,7 @@ internal static class SolverUiTokens
 
         private static Color Pick(string dark, string light)
         {
-            if (MobilePortPolicy.AdviceOnly)
+            if (MobilePortPolicy.IsMobile)
             {
                 string mobile = dark switch
                 {
@@ -174,7 +174,7 @@ internal static class SolverUiTokens
         int borderWidth = 1,
         bool shadow = false)
     {
-        if (MobilePortPolicy.AdviceOnly)
+        if (MobilePortPolicy.IsMobile)
             borderWidth = Math.Max(2, borderWidth);
         return new StyleBoxFlat
         {
