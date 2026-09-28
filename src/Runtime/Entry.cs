@@ -24,17 +24,22 @@ public static class Entry
     public static void Initialize()
     {
         Logger = new CombatSolverLog(Path.Combine(OS.GetUserDataDir(), "logs", "CombatSolver"));
-        try
+        if (!MobilePortPolicy.AdviceOnly)
         {
-            PreCombatForecastWorker.PinMainProcessModSources();
-        }
-        catch (Exception ex)
-        {
-            Logger.Warn(
-                $"[CombatSolver/PreCombatApi] MOD_SOURCE_PINNING_UNAVAILABLE error={ex}");
+            try
+            {
+                PreCombatForecastWorker.PinMainProcessModSources();
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"[CombatSolver/PreCombatApi] MOD_SOURCE_PINNING_UNAVAILABLE error={ex}");
+            }
         }
         SolverSettings.Load();
-        RuntimeGcStartup.Prepare(SolverSettings.Current.AutoConfigureServerGc);
+        if (!MobilePortPolicy.AdviceOnly)
+            RuntimeGcStartup.Prepare(SolverSettings.Current.AutoConfigureServerGc);
+        else
+            Logger.Info("[CombatSolver/Mobile] Advice-only port active; automatic search, deployment and desktop GC configuration disabled.");
         SolverUiTokens.ConfigureTheme(SolverSettings.Current.OverlayTheme);
         SolverController.ApplyPersistentSettings(SolverSettings.Capture());
         ModTypeDiscoveryHub.RegisterModAssembly(ModId, Assembly.GetExecutingAssembly());
@@ -98,11 +103,15 @@ public static class Entry
             if (host != null)
             {
                 SolverDispatcher.Ensure(host);
-                host.AddChild(new CombatShowcaseUploadNode());
-                host.TreeExiting += PreCombatForecastWorker.StopSessionAtProcessExit;
+                if (!MobilePortPolicy.AdviceOnly)
+                {
+                    host.AddChild(new CombatShowcaseUploadNode());
+                    host.TreeExiting += PreCombatForecastWorker.StopSessionAtProcessExit;
+                }
                 host.TreeExiting += Logger.Journal.Dispose;
             }
-            UnattendedTestRunner.TryStart(host);
+            if (!MobilePortPolicy.AdviceOnly)
+                UnattendedTestRunner.TryStart(host);
         }
     }
 

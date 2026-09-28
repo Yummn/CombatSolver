@@ -66,10 +66,10 @@ internal static class SolverUiTokens
 
     public static class Type
     {
-        public const int Title = 16;
-        public const int Metric = 15;
-        public const int Body = 14;
-        public const int Caption = 13;
+        public static int Title => MobilePortPolicy.AdviceOnly ? 22 : 16;
+        public static int Metric => MobilePortPolicy.AdviceOnly ? 19 : 15;
+        public static int Body => MobilePortPolicy.AdviceOnly ? 18 : 14;
+        public static int Caption => MobilePortPolicy.AdviceOnly ? 16 : 13;
         public const int Outline = 0;
     }
 
@@ -90,7 +90,7 @@ internal static class SolverUiTokens
         public const float MetricsDamageWidth = 92f;
         public const float MetricsHpWidth = 64f;
         public const float MetricsEnergyWidth = 52f;
-        public const float ButtonHeight = 34f;
+        public static float ButtonHeight => MobilePortPolicy.AdviceOnly ? 48f : 34f;
         public const float ResizeEdgeThickness = 8f;
         public const int ResizeGripSize = 20;
     }
@@ -138,7 +138,31 @@ internal static class SolverUiTokens
         public static string SuccessHex => IsLightTheme ? "#0f7b0f" : "#69b77d";
 
         private static Color Pick(string dark, string light)
-            => Color.FromHtml(IsLightTheme ? light : dark);
+        {
+            if (MobilePortPolicy.AdviceOnly)
+            {
+                string mobile = dark switch
+                {
+                    "101216f5" => "2b211af2",
+                    "191c22fa" => "39291ef7",
+                    "23272ffb" => "4b3626fa",
+                    "2b3039ff" => "62452dfb",
+                    "3a404aeb" => "b5854cff",
+                    "2a2f38cc" => "8b6945ee",
+                    "5c9fc7ff" => "e3b553ff",
+                    "73b4d8ff" => "f4cb76ff",
+                    "eef1f6ff" => "fff1d9ff",
+                    "b8c0ccff" => "ddc6a4ff",
+                    "858f9fff" => "bba484ff",
+                    "080a0de6" => "180e08e6",
+                    "34764fff" => "5d8749ff",
+                    "428d60ff" => "73a05cff",
+                    _ => dark,
+                };
+                return Color.FromHtml(mobile);
+            }
+            return Color.FromHtml(IsLightTheme ? light : dark);
+        }
     }
 
     public static StyleBoxFlat CreateBox(
@@ -150,6 +174,8 @@ internal static class SolverUiTokens
         int borderWidth = 1,
         bool shadow = false)
     {
+        if (MobilePortPolicy.AdviceOnly)
+            borderWidth = Math.Max(2, borderWidth);
         return new StyleBoxFlat
         {
             BgColor = background,

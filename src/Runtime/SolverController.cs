@@ -907,6 +907,11 @@ internal static partial class SolverController
     public static void RequestSearch(NGame host, CombatState state, SearchReason reason, bool deployWhenReady = false)
     {
         AssertMainThread();
+        if (MobilePortPolicy.AdviceOnly && (deployWhenReady || reason == SearchReason.Deploy))
+        {
+            Entry.Logger.Warn("[CombatSolver/Mobile] Deployment request rejected in advice-only build.");
+            return;
+        }
         if (reason == SearchReason.Manual)
             _combat.RouteFrozen = false;
         if (_combat.ShowcaseMode && reason != SearchReason.AutoTurnStart)
@@ -1384,6 +1389,11 @@ internal static partial class SolverController
     public static void RequestDeploy(NGame host, CombatState state)
     {
         AssertMainThread();
+        if (MobilePortPolicy.AdviceOnly)
+        {
+            Entry.Logger.Warn("[CombatSolver/Mobile] RequestDeploy rejected in advice-only build.");
+            return;
+        }
         SolverDispatcher.Ensure(host);
         if (_deployment != null)
         {
@@ -1453,6 +1463,11 @@ internal static partial class SolverController
     public static void SetFullAuto(NGame host, CombatState state, bool enabled)
     {
         AssertMainThread();
+        if (MobilePortPolicy.AdviceOnly && enabled)
+        {
+            Entry.Logger.Warn("[CombatSolver/Mobile] Full-auto rejected in advice-only build.");
+            return;
+        }
         SolverDispatcher.Ensure(host);
         if (!enabled)
         {
@@ -1556,6 +1571,8 @@ internal static partial class SolverController
     public static void SetAutomaticCalculationEnabled(bool enabled, bool persist = true)
     {
         AssertMainThread();
+        if (MobilePortPolicy.AdviceOnly)
+            enabled = false;
         if (persist)
         {
             SolverSettings.Update(SolverSettings.Current with
@@ -2744,6 +2761,11 @@ internal static partial class SolverController
 
     private static void StartDeployment(NGame host, CombatState state, SolverResult result)
     {
+        if (MobilePortPolicy.AdviceOnly)
+        {
+            Entry.Logger.Warn("[CombatSolver/Mobile] StartDeployment rejected in advice-only build.");
+            return;
+        }
         bool hasCurrentTurnPlan = result.BestNode.Actions.Any(action =>
             action.Turn == result.StartTurnNumber
             && (action.IsExecutable || action.Kind == PlanActionKind.EndTurn));

@@ -1922,7 +1922,8 @@ internal static class SolverOverlay
         _viewport.SizeChanged += ApplyResponsiveLayout;
         panel.MinimumSizeChanged += QueueResponsiveLayout;
         _panelPosition = SolverSettings.OverlayPosition
-            ?? new Vector2(SolverUiTokens.Size.PanelMargin, SolverUiTokens.Size.PanelMargin);
+            ?? new Vector2(SolverUiTokens.Size.PanelMargin,
+                MobilePortPolicy.AdviceOnly ? 118f : SolverUiTokens.Size.PanelMargin);
         _requestedPanelPosition = _panelPosition;
         _customPanelSize = SolverSettings.OverlaySize;
         Entry.Logger.Info(
@@ -1936,7 +1937,7 @@ internal static class SolverOverlay
         _settingsVisible = false;
         _potionStrategyVisible = false;
         _growthStrategyVisible = false;
-        SetCollapsed(false);
+        SetCollapsed(MobilePortPolicy.AdviceOnly);
         _relicStrategyVisible = false;
         Entry.Logger.Info("[CombatSolver/Test] UI_CREATE responsive=true content_fit_height=true minimum_size_reflow=true draggable=true drag_coordinates=viewport drag_relayout=release_only resizable=right+bottom+corner resize_grip=three_diagonal_lines size_persisted=true route_scroll_expand=true max_width=viewport max_height=viewport route_row_height=44 route_viewport_height=148 visible_unwrapped_route_rows=3 cached_route_rows=16 all_searched_turns=true route_scroll=true persistent_status_card=true compact_title=true compact_footer=true collapsed_action_buttons=true footer_pause_toggles=false settings_pause_toggles=true footer_top_margin=8 details_in_status_row=true battle_hp_in_route_heading=true sold_hp_summary=false three_column_routes=true semantic_action_pills=true full_target_names=true whole_pill_kill_highlight=true text_outline_px=2 wrapped_summary=true summary_bold_metric=true flat_collapse=true plain_details_button=true full_auto_positive_toggle=true no_middle_dot=true status_badge=true plain_action_buttons=true always_show_energy=true plain_route_heading=true settings_button=true settings_persisted=true settings_tabs=general+performance+feedback performance_advanced=collapsed notification_policy=three_state performance_presets=low+medium+high+very_high+custom kill_pill=green_with_target_names status_badge=content_width deployment_speed_settings=true search_status=fixed_columns_seconds only_death_marker=true relic_action_labels=true position_persisted=true theft_policy_buttons=contextual stop_search_button=true");
         Entry.Logger.Info("[CombatSolver/Test] UI_FEEDBACK_BANNER position=full_width manual_improvement=green unexpected_replan=red export_prompt=full_bug_report");
@@ -3239,6 +3240,8 @@ internal static class SolverOverlay
 
     private static void OnExecutePressed()
     {
+        if (MobilePortPolicy.AdviceOnly)
+            return;
         NGame? host = NGame.Instance;
         if (host != null && SolverController.IsSearching)
         {
@@ -3261,6 +3264,8 @@ internal static class SolverOverlay
 
     private static void OnFullAutoPressed()
     {
+        if (MobilePortPolicy.AdviceOnly)
+            return;
         Entry.Logger.Info("[CombatSolver/Test] UI_ACTION action=full_auto_toggle");
         NGame? host = NGame.Instance;
         CombatState? state = CombatManager.Instance.DebugOnlyGetState();

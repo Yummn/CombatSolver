@@ -25,6 +25,7 @@
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <RootNamespace>CombatSolver</RootNamespace>
     <Version>0.47.1</Version>
+    <DefineConstants Condition="'$(CombatSolverMobilePort)' == 'true'">$(DefineConstants);COMBAT_SOLVER_MOBILE</DefineConstants>
     <DefineConstants Condition="'$(VerifyHistoryCounters)' == 'true'">$(DefineConstants);VERIFY_HISTORY_COUNTERS</DefineConstants>
     <SteamRoot Condition="'$(SteamRoot)' == '' and '$(OS)' == 'Windows_NT' and Exists('D:/Steam')">D:/Steam</SteamRoot>
     <SteamRoot Condition="'$(SteamRoot)' == '' and '$(OS)' == 'Windows_NT'">$(MSBuildProgramFiles32)/Steam</SteamRoot>
@@ -77,7 +78,7 @@
     <Error Condition="'$(ShowcaseCertificateSha256)' == ''" Text="发布构建缺少 ShowcaseCertificateSha256。" />
   </Target>
 
-  <Target Name="BuildMemoryCleaner" BeforeTargets="Build" Condition="'$(OS)' == 'Windows_NT'">
+  <Target Name="BuildMemoryCleaner" BeforeTargets="Build" Condition="'$(OS)' == 'Windows_NT' and '$(CombatSolverMobilePort)' != 'true'">
     <MSBuild Projects="$(MemoryCleanerProject)" Targets="Restore" Properties="Configuration=$(Configuration)" />
     <MSBuild Projects="$(MemoryCleanerProject)" Targets="Build" Properties="Configuration=$(Configuration)" />
   </Target>
@@ -90,6 +91,6 @@
     <MakeDir Directories="$(ModOutputDir)" />
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(ModOutputDir)" />
     <Copy SourceFiles="$(MSBuildProjectDirectory)/CombatSolver.json" DestinationFolder="$(ModOutputDir)" />
-    <Copy SourceFiles="$(MemoryCleanerOutput)" DestinationFolder="$(ModOutputDir)" Condition="'$(OS)' == 'Windows_NT'" />
+    <Copy SourceFiles="$(MemoryCleanerOutput)" DestinationFolder="$(ModOutputDir)" Condition="'$(OS)' == 'Windows_NT' and '$(CombatSolverMobilePort)' != 'true'" />
   </Target>
 </Project>

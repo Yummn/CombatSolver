@@ -49,6 +49,7 @@ internal sealed partial class SolverActionBar : VBoxContainer
         _memoryRow.AddThemeConstantOverride("separation", SolverUiTokens.Spacing.Sm);
         _memoryRow.AddChild(memory);
         _memoryRow.AddChild(releaseMemory);
+        releaseMemory.Visible = !MobilePortPolicy.AdviceOnly;
         AddChild(_memoryRow);
     }
 
@@ -58,8 +59,9 @@ internal sealed partial class SolverActionBar : VBoxContainer
         _stop.Visible = state.Searching;
         _adopt.Visible = state.ShowAdopt;
         _freeze.Visible = !state.Searching && state.ShowFreeze;
-        _execute.Visible = !state.Searching;
-        _autoStart.Visible = !state.Collapsed;
+        _execute.Visible = !MobilePortPolicy.AdviceOnly && !state.Searching;
+        _fullAuto.Visible = !MobilePortPolicy.AdviceOnly;
+        _autoStart.Visible = !MobilePortPolicy.AdviceOnly && !state.Collapsed;
         _memoryRow.Visible = !state.Collapsed;
         _memory.Visible = !state.Collapsed;
     }
