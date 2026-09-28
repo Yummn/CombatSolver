@@ -4,6 +4,7 @@
 
 - BetterDefect 保存的 59 项卡牌改造不再作为全局拒绝条件；根捕获读取各卡类型的实际改造状态，搜索动作生成排除未镜像改造牌，直接调用镜像时仍会拒绝该牌。已生效的改造 Power、未知卡／球仍保持拒绝；自动执行不再无条件被 BetterDefect 拦截。
 - REDMI K80 Pro 实战，游戏 v0.111.0、BetterDefect v0.11.66、RitsuLib v0.6.2：开发构建在启用 59 项改造的原始偏好下完成故障机器人首战搜索；点击求解器的「执行本回合」后实际打出双重释放并击杀最后一只噬尸蛞蝓。随后替换为最终 UI 构建，再在下一场双蛞蝓战斗中完成搜索及「执行本回合」，实战生成一个闪电球、目标 25→19 HP、进入第二回合，进程仍运行。截图：`../.port-build/mobile-betterdefect-compat-20260928/solver-safe-deploy.png`、`solver-final-search.png`、`solver-final-deployed.png`。本测试没有打出任何改造牌，不是其预测正确性的证据。
+- 隔离战斗测试后恢复原存档与设置数据，再安装正式 BetterDefect v0.11.66／CombatSolver `preview.4`，并将 RitsuLib 与 CombatSolver 连同用户原先启用的七个模组一起启用。手机 v0.111.0 成功进入主菜单，右下角显示已加载 10 个模组；原 59 项改造状态文件 SHA-256 仍为 `1777b6eb5b161afd2004d4d7ebb8d26ded2b6302dda07f4498a9b4aa4ed13bc3`。截图 `../.port-build/mobile-betterdefect-compat-20260928/combined-ready.png`，日志 `combined-sts2.log`。此项仅验证组合启动，不等于十模组战斗兼容。
 - `dotnet build -c Release -p:CombatSolverMobilePort=true` 对 v0.111.0 程序集编译 0 警告、0 错误；`git diff --check` 通过。未进行全 69 改造卡／27 新增卡、多模组组合及整局策略质量验证。
 
 ## Android v0.111.0 BetterDefect 窄范围兼容开发（2026-09-28）
