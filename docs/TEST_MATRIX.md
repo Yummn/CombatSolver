@@ -2,6 +2,8 @@
 
 ## Android v0.111.0 BetterDefect 窄范围兼容开发（2026-09-28）
 
+- 最终版本配对复测：手机 v0.111.0 加载正式 BetterDefect v0.11.66、RitsuLib v0.6.2 与 CombatSolver `mobile-v111-0.47.1-preview.3`；仅启用「寒流」改造，真实故障机器人首战可进入并完成求解器搜索。点击「执行本回合」显示“尚未完成实机结算对账；当前仅供查看，不会自动出牌”，没有让未经验证的预测控制游戏。截图：`../.port-build/mobile-betterdefect-compat-20260928/corrected-search.png` 和 `corrected-deploy-block.png`，启动及搜索日志：同目录 `corrected-launch.log`、`corrected-search.log`。此项**不等于**寒流预测的逐状态差分，更不等于 BetterDefect 全卡兼容。
+- 复测结束后强制停止游戏，并从测试前 tar 恢复手机原设置、存档、BetterDefect 及 CombatSolver 二进制；核验原 BetterDefect DLL SHA-256 `2868bc3185723118cf6c77283fa85118ba595d2f5703a996e140ad97cdc46f75`、原设置 SHA-256 `c1336879d892c36c8394690327f183982b08d8921e3b243b805a17d750b23d5f`、原改造状态 SHA-256 `1777b6eb5b161afd2004d4d7ebb8d26ded2b6302dda07f4498a9b4aa4ed13bc3`，并删除临时状态文件。恢复原配置中 RitsuLib/CombatSolver 为关闭状态，故不能保留依赖 RitsuLib 的 BetterDefect v0.11.66 DLL 在手机上。
 - 真机发现 v0.111.0 的 RitsuLib 先把 `CardModel.OnPlayWrapper` 的虚调用改写为 `CardOnPlayHook.RunCardOnPlayHooks`，使 BetterDefect v0.11.65 原中央 transpiler 替换 0 处。BetterDefect v0.11.66 改为注册 `ICardOnPlayHookListener`，保留 RitsuLib 的前后钩子；四模组启动日志显示监听器注册成功且没有中央补丁失败。
 - REDMI K80 Pro / v0.111.0 真实战斗：临时测试模组使用 `CardCmd.AutoPlay` 打出改造寒流，日志记录 `cost=2 damage=12 hpDelta=12 frostCount=2`、PASS；求解器在只有寒流改造启用的存档成功搜索 571 条路线并显示路线；点击执行本回合被预期的“尚未完成实机结算对账”保护挡下。证据：`../.port-build/mobile-betterdefect-compat-20260928/harness-final.log`、`solver-route.png`、`deploy-block.png`。原手机存档、设置和两个模组 DLL 已从测试前 tar 恢复，临时测试模组删除。
 - 上述只验证了寒流未升级、空球位的一次实际效果和原版开局路线搜索，**没有完成**寒流出现在求解器路线中的逐状态差分、升级版／球位满、其余 68 张改造或新增卡；自动出牌继续阻断。
