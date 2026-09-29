@@ -99,6 +99,17 @@ internal static partial class CardChoiceSupport
         return card switch
         {
             SeekerStrike => BuildSeekerSpec(simulator, playedCard, owner),
+            AllForOne when BetterDefectMobileCompatibility.IsTransformed<AllForOne>() =>
+                RangeSpec(owner, PlanChoiceEffect.MoveToHand, PileType.Discard, 0,
+                    card.IsUpgraded ? 3 : 2,
+                    discardBeforeResolution.Where(item =>
+                        !item.Preview.EnergyCost.CostsX
+                        && !item.HasKeyword(simulator.State, CardKeyword.Unplayable)
+                        && item.GetEnergyCostWithModifiers(simulator, owner) == 0
+                        && item.Preview.Type is CardType.Attack or CardType.Skill or CardType.Power)),
+            Rebound when BetterDefectMobileCompatibility.IsTransformed<Rebound>() =>
+                Spec(owner, PlanChoiceEffect.MoveToDrawTop, PileType.Discard, 1,
+                    discardBeforeResolution),
             TrueGrit when card.IsUpgraded => Spec(owner, PlanChoiceEffect.Exhaust, PileType.Hand, 1, owner.Hand.Cards),
             Hologram => Spec(owner, PlanChoiceEffect.MoveToHand, PileType.Discard, 1, discardBeforeResolution),
             Graveblast => Spec(owner, PlanChoiceEffect.MoveToHand, PileType.Discard, 1, discardBeforeResolution),

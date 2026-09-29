@@ -74,6 +74,8 @@ internal static partial class CardOnPlayMirrors
         var registry = new Registry(OnPlay);
 
         registry.Register<HowlFromBeyond>(GeneralCardMirrors.GeneralAttackOnPlay);
+        registry.Register<AllForOne>(GeneralCardMirrors.GeneralAttackOnPlay);
+        registry.Register<Rebound>(GeneralCardMirrors.GeneralAttackOnPlay);
         registry.Register<Mangle>(GeneralCardMirrors.GeneralAttackOnPlay);
         registry.Register<IAmInvincible>(GeneralCardMirrors.GeneralBlockOnPlay);
         registry.Register<AstralPulse>(BespokeCardMirrors.AstralPulseOnPlay);

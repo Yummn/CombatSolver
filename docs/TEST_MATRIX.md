@@ -1,5 +1,10 @@
 # CombatSolver 测试清单
 
+## BetterDefect 改造选牌续作（2026-09-29，未验收）
+
+- 手机 v0.111.0 编译：`CombatSolverMobileTest=true` 和普通发布构建均 0 警告、0 错误；测试构建临时开放 `AllForOne`、`Rebound` 两个候选镜像，普通构建仍拒绝两者。
+- PC v0.107.1 隔离真实游戏：BetterDefect v0.11.65 原生「弹回」「万物一心」效果分别通过单卡测试。PC 上无法运行本分支的 v0.111.0 求解器，故未测试 actual-vs-predicted 差分、自动出牌或其余 22 张未适配牌。手机当前无 ADB 连接。
+
 ## Android v0.111.0 BetterDefect 安全自动路线（2026-09-29）
 
 - BetterDefect 保存的 59 项卡牌改造不再作为全局拒绝条件；根捕获读取各卡类型的实际改造状态，搜索动作生成排除未镜像改造牌，直接调用镜像时仍会拒绝该牌。已生效的改造 Power、未知卡／球仍保持拒绝；自动执行不再无条件被 BetterDefect 拦截。

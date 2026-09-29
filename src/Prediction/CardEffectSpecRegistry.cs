@@ -138,7 +138,8 @@ internal static class CardEffectSpecRegistry
         CardModel card = playedCard.Preview;
         Creature ownerCreature = playedCard.Preview.Owner.Creature;
         bool applied = false;
-        if (PowerEffects.TryGetValue(card.GetType(), out CardPowerEffect[]? effects))
+        if (!(card is Rebound && BetterDefectMobileCompatibility.IsTransformed<Rebound>())
+            && PowerEffects.TryGetValue(card.GetType(), out CardPowerEffect[]? effects))
         {
             applied = true;
             foreach (CardPowerEffect effect in effects)
@@ -198,6 +199,14 @@ internal static class CardEffectSpecRegistry
         {
             case AllForOne:
             {
+                if (BetterDefectMobileCompatibility.IsTransformed<AllForOne>())
+                {
+                    // BetterDefect opens a 0..2/3 discard-pile selection after
+                    // damage. Moving every zero-cost card here would both
+                    // bypass that choice and corrupt the selected pile.
+                    applied = true;
+                    break;
+                }
                 SimPlayerCombatState ownerState = simulator.State.GetPlayerCombatState(card.Owner);
                 PredictedCard[] cards = ownerState.DiscardPile.Cards
                     .Where(candidate => !candidate.Preview.EnergyCost.CostsX

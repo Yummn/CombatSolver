@@ -5,7 +5,8 @@ Target: Android game v0.111.0, BetterDefect v0.11.66. The reviewed save has 59 e
 ## Current boundary
 
 - 35 enabled card types have reviewed branch mirrors or only captured model-data changes. Two further mirrored types (`GoForTheEyes`, `MeteorStrike`) are not enabled in this save.
-- The remaining 24 enabled types are still protected from prediction as transformed cards. The solver must not silently substitute vanilla effects for them.
+- Two additional candidate mirrors (`AllForOne`, `Rebound`) are staged behind `COMBAT_SOLVER_MOBILE_TEST`; release builds continue to protect them until an Android v0.111.0 actual/simulated differential covers their selection paths.
+- The remaining 24 enabled types are still protected from prediction as transformed cards in release builds. The solver must not silently substitute vanilla effects for them.
 - Some effects are power, orb, choice, or card-generation hooks rather than `OnPlay`. A card is not complete merely because its play animation can finish.
 - A version mismatch against BetterDefect v0.11.66 remains a hard rejection.
 
@@ -17,9 +18,11 @@ The deterministic DEFECT/SLIMES_WEAK fixtures use the actual Android v0.111.0 ga
 
 These fixtures do not prove every upgrade level, status interaction, enemy, relic, or enchantment combination. `TrashToTreasure` changes only captured cost/Innate model data in the reviewed BetterDefect source; its prior basic test did not force the AI to play it.
 
-## Still protected (24)
+## Still protected in release builds (24)
 
 `BD_RECURSION`, `SCRAPE`, `WHITE_NOISE`, `SUBROUTINE`, `SMOKESTACK`, `ALL_FOR_ONE`, `CREATIVE_AI`, `BD_STREAMLINE`, `UPROAR`, `FTL`, `ECHO_FORM`, `HELLO_WORLD`, `BARRAGE`, `BD_AUTO_SHIELDS`, `HYPERBEAM`, `BD_REINFORCED_BODY`, `SPINNER`, `REBOUND`, `BD_RECYCLE`, `BD_STATIC_DISCHARGE`, `STACK`, `STORM`, `ITERATION`, `BD_CONSUME`.
+
+The desktop Steam game currently installed for development is v0.107.1, while this adapter targets v0.111.0. Running BetterDefect on desktop v0.107.1 can check its native card effects but cannot verify this v0.111.0 solver binary or its shadow-state differential semantics. Do not count such a desktop run as Android adapter acceptance.
 
 Several of these use BetterDefect-owned card or power types, persistent per-turn counters, nested selections, or generated-card RNG. They require explicit prediction-state capture/forking and differential fixtures; removing them from the guard is not an adaptation.
 
