@@ -78,6 +78,7 @@ internal static partial class CardOnPlayMirrors
         registry.Register<IAmInvincible>(GeneralCardMirrors.GeneralBlockOnPlay);
         registry.Register<AstralPulse>(BespokeCardMirrors.AstralPulseOnPlay);
         registry.Register<BoneShards>(BespokeCardMirrors.BoneShardsOnPlay);
+        registry.Register<Claw>(BespokeCardMirrors.ClawOnPlay);
         registry.Register<DaggerSpray>(BespokeCardMirrors.DaggerSprayOnPlay);
         registry.Register<PactsEnd>(BespokeCardMirrors.PactsEndOnPlay);
         registry.Register<TwinStrike>(BespokeCardMirrors.TwinStrikeOnPlay);
@@ -136,8 +137,10 @@ internal static partial class CardOnPlayMirrors
         registry.Register<Fusion>(OrbCardMirrors.FusionOnPlay);
         registry.Register<Glacier>(OrbCardMirrors.GlacierOnPlay);
         registry.Register<Glasswork>(OrbCardMirrors.GlassworkOnPlay);
+        registry.Register<HelixDrill>(OrbCardMirrors.HelixDrillOnPlay);
         registry.Register<IceLance>(OrbCardMirrors.IceLanceOnPlay);
         registry.Register<Ignition>(OrbCardMirrors.IgnitionOnPlay);
+        registry.Register<LightningRod>(OrbCardMirrors.LightningRodOnPlay);
         registry.Register<MeteorStrike>(OrbCardMirrors.MeteorStrikeOnPlay);
         registry.Register<MultiCast>(OrbCardMirrors.MultiCastOnPlay);
         registry.Register<Null>(OrbCardMirrors.NullOnPlay);

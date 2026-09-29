@@ -1,6 +1,7 @@
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Powers;
 using CombatSolver.Engine.Common;
 using CombatSolver.Engine.Common.Mirrors;
@@ -81,10 +82,11 @@ internal static class ModifyCardPlayResultLocationMirrors
     {
         var card = context.Card.Preview;
         var state = context.StateStore.Get(power, () => new FeralPredictionState(power));
+        bool transformed = BetterDefectMobileCompatibility.IsTransformed<Feral>();
         if (card.Owner.Creature != power.Owner ||
-            card.Type != CardType.Attack ||
+            (!transformed && card.Type != CardType.Attack) ||
             context.Resources.EnergyValue > 0 ||
-            card.IsDupe ||
+            (!transformed && card.IsDupe) ||
             state.ZeroCostAttacksPlayed >= power.Amount)
         {
             return context.Location;

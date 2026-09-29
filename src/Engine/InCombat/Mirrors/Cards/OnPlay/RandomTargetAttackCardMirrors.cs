@@ -22,7 +22,18 @@ internal static class RandomTargetAttackCardMirrors
                 return;
         }
 
-        context.AttackRandomOpponents(statuses.Count);
+        if (BetterDefectMobileCompatibility.IsTransformed<FlakCannon>())
+        {
+            // The transformed card targets one enemy and counts the *entire*
+            // exhaust pile after exhausting statuses, not just those statuses.
+            int hitCount = context.OwnerState.ExhaustPile.Cards.Count;
+            if (hitCount > 0)
+                context.AttackSingle(hitCount);
+        }
+        else
+        {
+            context.AttackRandomOpponents(statuses.Count);
+        }
     }
 
     public static void RicochetOnPlay(Ricochet card, CardOnPlayMirrorContext context)

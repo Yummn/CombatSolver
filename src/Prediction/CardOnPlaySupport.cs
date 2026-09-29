@@ -90,8 +90,14 @@ internal static partial class CardOnPlaySupport
             {
                 SimPlayerCombatState playerState = simulator.State.GetPlayerCombatState(card.Owner);
                 simulator.GainEnergy(card.Owner, playerState.Energy);
+                if (BetterDefectMobileCompatibility.IsTransformed<DoubleEnergy>()
+                    && !simulator.HasPendingChoice)
+                    simulator.Draw(card.Owner, 1);
                 break;
             }
+            case Leap when BetterDefectMobileCompatibility.IsTransformed<Leap>():
+                playedCard.MutablePreview.EnergyCost.SetThisCombat(0);
+                break;
             case EnfeeblingTouch when target != null:
                 combat.ApplyTemporaryStrengthLoss<EnfeeblingTouchPower>(
                     target,
@@ -112,6 +118,9 @@ internal static partial class CardOnPlaySupport
                 break;
             case ForgottenRitual or Fuel or Luminesce:
                 simulator.GainEnergy(card.Owner, card.DynamicVars.Energy.IntValue);
+                if (card is Fuel fuel && BetterDefectMobileCompatibility.IsTransformed<Compact>()
+                    && !simulator.HasPendingChoice)
+                    simulator.Draw(card.Owner, fuel.IsUpgraded ? 2 : 1);
                 break;
             case Haze:
                 foreach (Creature enemy in combat.HittableEnemies)

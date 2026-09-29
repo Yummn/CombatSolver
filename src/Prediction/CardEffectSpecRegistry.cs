@@ -32,6 +32,11 @@ internal sealed record CardPowerEffect(
 /// </summary>
 internal static class CardEffectSpecRegistry
 {
+    private static readonly Lazy<System.Reflection.FieldInfo> ClawExtraHitsField = new(() =>
+        typeof(Claw).GetField("_extraDamageFromClawPlays",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+        ?? throw new MissingFieldException(typeof(Claw).FullName, "_extraDamageFromClawPlays"));
+
     private static readonly Dictionary<Type, CardPowerEffect[]> PowerEffects = new()
     {
         [typeof(Blur)] = [Owner<BlurPower>("Blur")],
@@ -182,6 +187,13 @@ internal static class CardEffectSpecRegistry
             }
         }
 
+        if (card is ChargeBattery && BetterDefectMobileCompatibility.IsTransformed<ChargeBattery>())
+        {
+            combat.Apply<DrawCardsNextTurnPower>(ownerCreature, 1, ownerCreature);
+            if (simulator.HasPendingChoice)
+                return true;
+        }
+
         switch (card)
         {
             case AllForOne:
@@ -275,7 +287,16 @@ internal static class CardEffectSpecRegistry
                 foreach (PredictedCard candidate in simulator.State.GetPlayerCombatState(card.Owner).AllCards)
                 {
                     if (candidate.Preview is Claw)
-                        ((Claw)candidate.MutablePreview).BuffFromClawPlay(increase);
+                    {
+                        Claw mutable = (Claw)candidate.MutablePreview;
+                        if (BetterDefectMobileCompatibility.IsTransformed<Claw>())
+                        {
+                            decimal prior = ClawExtraHitsField.Value.GetValue(mutable) is decimal count ? count : 0m;
+                            ClawExtraHitsField.Value.SetValue(mutable, prior + 1m);
+                        }
+                        else
+                            mutable.BuffFromClawPlay(increase);
+                    }
                 }
                 applied = true;
                 break;
@@ -320,7 +341,9 @@ internal static class CardEffectSpecRegistry
                 applied = true;
                 break;
             }
-            case GoForTheEyes when target != null && combat.IsEnemyIntendingToAttack(target):
+            case GoForTheEyes when target != null &&
+                (BetterDefectMobileCompatibility.IsTransformed<GoForTheEyes>()
+                 || combat.IsEnemyIntendingToAttack(target)):
                 combat.Apply<WeakPower>(target, card.DynamicVars.Weak.IntValue, ownerCreature);
                 applied = true;
                 break;
@@ -401,7 +424,10 @@ internal static class CardEffectSpecRegistry
                 break;
             }
             case FightThrough:
-                AddFixed<Wound>(simulator, card, PileType.Discard, 2);
+                if (BetterDefectMobileCompatibility.IsTransformed<FightThrough>())
+                    AddFixed<Dazed>(simulator, card, PileType.Discard, 2);
+                else
+                    AddFixed<Wound>(simulator, card, PileType.Discard, 2);
                 applied = true;
                 break;
             case GraveWarden:
@@ -414,7 +440,9 @@ internal static class CardEffectSpecRegistry
                 applied = true;
                 break;
             case GunkUp:
-                AddFixed<Slimed>(simulator, card, PileType.Discard, 1);
+                AddFixed<Slimed>(simulator, card,
+                    BetterDefectMobileCompatibility.IsTransformed<GunkUp>()
+                        ? PileType.Hand : PileType.Discard, 1);
                 applied = true;
                 break;
             case Overclock:

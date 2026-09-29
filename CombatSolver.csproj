@@ -26,6 +26,7 @@
     <RootNamespace>CombatSolver</RootNamespace>
     <Version>0.47.1</Version>
     <DefineConstants Condition="'$(CombatSolverMobilePort)' == 'true'">$(DefineConstants);COMBAT_SOLVER_MOBILE</DefineConstants>
+    <DefineConstants Condition="'$(CombatSolverMobileTest)' == 'true'">$(DefineConstants);COMBAT_SOLVER_MOBILE_TEST</DefineConstants>
     <DefineConstants Condition="'$(VerifyHistoryCounters)' == 'true'">$(DefineConstants);VERIFY_HISTORY_COUNTERS</DefineConstants>
     <SteamRoot Condition="'$(SteamRoot)' == '' and '$(OS)' == 'Windows_NT' and Exists('D:/Steam')">D:/Steam</SteamRoot>
     <SteamRoot Condition="'$(SteamRoot)' == '' and '$(OS)' == 'Windows_NT'">$(MSBuildProgramFiles32)/Steam</SteamRoot>

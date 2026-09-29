@@ -1,6 +1,7 @@
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Orbs;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.ValueProps;
@@ -68,7 +69,29 @@ internal static partial class EndTurnPowerSupport
                     combat.Apply<StrengthPower>(owner, power.Amount, owner);
                     break;
                 case ConsumingShadowPower when ownerParticipates && owner.Player is { } player:
-                    if (!EvokeLastOrbs(simulator, player, power.Amount))
+                    if (BetterDefectMobileCompatibility.IsTransformed<ConsumingShadow>())
+                    {
+                        for (int repeat = 0; repeat < power.Amount; repeat++)
+                        {
+                            foreach (DarkOrb dark in simulator.State.GetPlayerCombatState(player)
+                                         .OrbQueue.Orbs.OfType<DarkOrb>().ToArray())
+                            {
+                                simulator.OrbPassive(dark);
+                                if (simulator.HasPendingChoice)
+                                    return false;
+                            }
+                        }
+                    }
+                    else if (!EvokeLastOrbs(simulator, player, power.Amount))
+                        return false;
+                    break;
+                case CoolantPower when ownerParticipates && owner.Player is { } coolantPlayer
+                    && BetterDefectMobileCompatibility.IsTransformed<Coolant>():
+                    int distinctOrbs = simulator.State.GetPlayerCombatState(coolantPlayer).OrbQueue.Orbs
+                        .Select(orb => orb.Id).Distinct().Count();
+                    if (distinctOrbs > 0)
+                        simulator.GainBlock(owner, distinctOrbs * power.Amount, ValueProp.Unpowered);
+                    if (simulator.HasPendingChoice)
                         return false;
                     break;
                 case NemesisPower when ownerParticipates:

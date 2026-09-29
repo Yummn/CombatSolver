@@ -156,7 +156,19 @@ internal static class AfterCardGeneratedForCombatMirrors
             context.PreviewCard.Owner == card.Owner &&
             context.PreviewCard.Type == CardType.Status)
         {
-            context.State.FindCard(card)?.MutablePreview.EnergyCost.AddUntilPlayed(-1);
+            if (context.State.FindCard(card) is { } predicted)
+            {
+                // BetterDefect v0.11.66 replaces the generation hook even
+                // for the untransformed card.  The transformed discount
+                // persists across turns until play; the other expires at
+                // turn end (unless played first).
+                if (BetterDefectMobileCompatibility.IsTransformed<RocketPunch>())
+                    predicted.MutablePreview.EnergyCost.SetUntilPlayed(0);
+                else if (BetterDefectMobileCompatibility.HasReviewedMobileMod)
+                    predicted.MutablePreview.EnergyCost.SetThisTurnOrUntilPlayed(0);
+                else
+                    predicted.MutablePreview.EnergyCost.AddUntilPlayed(-1);
+            }
         }
     }
 }

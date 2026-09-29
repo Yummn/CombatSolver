@@ -7,11 +7,32 @@ using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Powers;
 using CombatSolver.Engine.Common;
 using CombatSolver.Engine.InCombat.Simulation;
+using System.Reflection;
 
 namespace CombatSolver.Engine.InCombat.Mirrors.Cards.OnPlay;
 
 internal static class BespokeCardMirrors
 {
+    private static readonly Lazy<FieldInfo> ClawExtraHitsField = new(() =>
+        typeof(Claw).GetField("_extraDamageFromClawPlays", BindingFlags.Instance | BindingFlags.NonPublic)
+        ?? throw new MissingFieldException(typeof(Claw).FullName, "_extraDamageFromClawPlays"));
+
+    public static void ClawOnPlay(Claw card, CardOnPlayMirrorContext context)
+    {
+        context.AttackSingle();
+        if (!BetterDefectMobileCompatibility.IsTransformed<Claw>() || context.Simulator.HasPendingChoice)
+            return;
+        int extraHits = Math.Max(0, (int)(ClawExtraHitsField.Value.GetValue(card) is decimal value ? value : 0m));
+        decimal damage = card.DynamicVars["Increase"].BaseValue;
+        for (int i = 0; i < extraHits; i++)
+        {
+            DamageCmd.Attack(damage).FromCard(card, context.CardPlay)
+                .Targeting(context.Target).Simulate(context.Simulator);
+            if (context.Simulator.HasPendingChoice)
+                return;
+        }
+    }
+
     public static void AstralPulseOnPlay(AstralPulse _, CardOnPlayMirrorContext context)
         => context.AttackAllOpponents(hitCount: 2);
 

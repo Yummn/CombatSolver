@@ -115,8 +115,14 @@ public static class Entry
                 }
                 host.TreeExiting += Logger.Journal.Dispose;
             }
+#if COMBAT_SOLVER_MOBILE_TEST
+            // Test-only Android build: the production APK never accepts
+            // filesystem-injected unattended requests.
+            UnattendedTestRunner.TryStart(host);
+#else
             if (!MobilePortPolicy.IsMobile)
                 UnattendedTestRunner.TryStart(host);
+#endif
         }
     }
 

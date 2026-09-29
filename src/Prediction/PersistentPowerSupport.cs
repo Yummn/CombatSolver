@@ -175,7 +175,8 @@ internal static class PersistentPowerSupport
             combat.Apply<FocusPower>(owner, -biasedCognition, owner);
 
         int coolant = combat.GetAmount<CoolantPower>(owner);
-        if (coolant > 0 && owner.Player is { } coolantPlayer)
+        if (coolant > 0 && !BetterDefectMobileCompatibility.IsTransformed<Coolant>()
+            && owner.Player is { } coolantPlayer)
         {
             int distinctOrbs = simulator.State.GetPlayerCombatState(coolantPlayer).OrbQueue.Orbs
                 .Select(static orb => orb.Id)

@@ -354,11 +354,25 @@ internal static partial class TurnStartPowerSupport
                         break;
                     for (int index = 0; index < power.Amount; index++)
                     {
-                        simulator.OrbPassive(queue.Orbs[0]);
+                        var atStart = queue.Orbs.ToArray();
+                        if (atStart.Length == 0)
+                            break;
+                        simulator.OrbPassive(atStart[0]);
                         if (combat.HasPendingChoice)
                         {
                             simulator.RejectExecutionContinuation();
                             return true;
+                        }
+                        if (BetterDefectMobileCompatibility.IsTransformed<Loop>())
+                        {
+                            // BetterDefect treats the two edge positions as
+                            // separate triggers even when only one orb exists.
+                            simulator.OrbPassive(atStart[^1]);
+                            if (combat.HasPendingChoice)
+                            {
+                                simulator.RejectExecutionContinuation();
+                                return true;
+                            }
                         }
                     }
                     break;

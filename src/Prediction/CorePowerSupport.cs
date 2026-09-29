@@ -162,6 +162,11 @@ internal static class CorePowerSupport
             case Sunder when target != null && WasCardKill(simulator, playedCard, target, historyEntryStart):
                 simulator.GainEnergy(card.Owner, card.DynamicVars.Energy.IntValue);
                 break;
+            case Sunder when target != null && BetterDefectMobileCompatibility.IsTransformed<Sunder>():
+                // The transformed version discounts itself for this combat
+                // when the attack did not kill its target.
+                playedCard.MutablePreview.EnergyCost.AddThisCombat(-1, reduceOnly: true);
+                break;
             case TheHunt when target != null:
             {
                 if (WasFatalKill(
@@ -213,6 +218,8 @@ internal static class CorePowerSupport
                 break;
             case MegaCrit.Sts2.Core.Models.Cards.Buffer:
                 combat.Apply<BufferPower>(owner, card.DynamicVars["BufferPower"].IntValue, owner);
+                if (BetterDefectMobileCompatibility.IsTransformed<MegaCrit.Sts2.Core.Models.Cards.Buffer>())
+                    simulator.GainBlock(owner, 10, ValueProp.Move, playedCard, cardPlay);
                 break;
             case Caltrops:
                 combat.Apply<ThornsPower>(owner, card.DynamicVars["ThornsPower"].IntValue, owner);
@@ -344,6 +351,9 @@ internal static class CorePowerSupport
                 break;
             case PoisonedStab when target != null:
                 combat.Apply<PoisonPower>(target, card.DynamicVars.Poison.IntValue, owner);
+                break;
+            case Null when target != null && BetterDefectMobileCompatibility.IsTransformed<Null>():
+                // Applied between attack and channeling by the transformed mirror.
                 break;
             case LegSweep or SuckerPunch or Null or Suppress when target != null:
                 combat.Apply<WeakPower>(target, card.DynamicVars.Weak.IntValue, owner);

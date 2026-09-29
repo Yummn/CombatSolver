@@ -21,7 +21,26 @@ internal static class BetterDefectMobileCompatibility
     // Runtime registration is a stronger compatibility signal than MVID:
     // reproducible builds of the same source can have different module IDs.
     private static readonly HashSet<Type> AlwaysReplacedCards =
-        [typeof(Shatter), typeof(TeslaCoil), typeof(Fuel), typeof(Scrape)];
+        [typeof(Scrape)];
+    // These exact v0.11.66 transformations have explicit branch mirrors below,
+    // or only change model data already read from the captured card. Do not add
+    // a type merely because its vanilla OnPlay happens to look similar.
+    private static readonly HashSet<Type> MirroredTransformations =
+    [
+        typeof(BiasedCognition), typeof(MegaCrit.Sts2.Core.Models.Cards.Buffer),
+        typeof(ChargeBattery), typeof(Chaos), typeof(Claw), typeof(ColdSnap), typeof(Compact),
+        typeof(ConsumingShadow), typeof(Coolant), typeof(Coolheaded),
+        typeof(Defragment), typeof(DoubleEnergy), typeof(Feral), typeof(FightThrough),
+        typeof(FlakCannon),
+        typeof(FocusedStrike),
+        typeof(Fusion), typeof(GeneticAlgorithm), typeof(GoForTheEyes),
+        typeof(GunkUp), typeof(HelixDrill), typeof(Hotfix), typeof(Leap),
+        typeof(LightningRod), typeof(Loop),
+        typeof(MeteorStrike), typeof(MultiCast), typeof(Null), typeof(Rainbow),
+        typeof(RocketPunch), typeof(Shatter),
+        typeof(Sunder), typeof(SweepingBeam), typeof(Synchronize), typeof(Tempest),
+        typeof(TeslaCoil), typeof(TrashToTreasure), typeof(Voltaic),
+    ];
     private static readonly HashSet<Type> PotentialCardGenerators =
     [
         typeof(Abundance), typeof(BundleOfJoy), typeof(Distraction), typeof(Discovery),
@@ -35,25 +54,28 @@ internal static class BetterDefectMobileCompatibility
     // their source card was played manually before the search was requested.
     private static readonly Dictionary<string, string> ModifiedPowerSources = new(StringComparer.Ordinal)
     {
-        ["ConsumingShadowPower"] = "ConsumingShadow",
-        ["CoolantPower"] = "Coolant",
         ["EchoFormPower"] = "EchoForm",
-        ["FeralPower"] = "Feral",
         ["HailstormPower"] = "Hailstorm",
         ["IterationPower"] = "Iteration",
-        ["LoopPower"] = "Loop",
         ["SmokestackPower"] = "Smokestack",
         ["SubroutinePower"] = "Subroutine",
     };
 
     // Written at main-thread root capture, read by branch-local card mirrors.
     private static Assembly? _activeAssembly;
-    private static int _coldSnapTransformed;
+    private static HashSet<Type> _transformedTypes = [];
     private static HashSet<Type> _unmirroredTransformedTypes = [];
     private static int _transformedTypesInCombat;
 
     internal static bool ColdSnapTransformed =>
-        MobilePortPolicy.IsMobile && Volatile.Read(ref _coldSnapTransformed) != 0;
+        IsTransformed<ColdSnap>();
+
+    internal static bool HasReviewedMobileMod =>
+        MobilePortPolicy.IsMobile && Volatile.Read(ref _activeAssembly) is not null;
+
+    internal static bool IsTransformed<TCard>() where TCard : CardModel
+        => MobilePortPolicy.IsMobile && Volatile.Read(ref _activeAssembly) is not null
+            && Volatile.Read(ref _transformedTypes).Contains(typeof(TCard));
 
     internal static bool CanSolverPlay(CardModel card)
         => !MobilePortPolicy.IsMobile || Volatile.Read(ref _activeAssembly) is null
@@ -71,7 +93,7 @@ internal static class BetterDefectMobileCompatibility
             string.Equals(item.manifest?.id, ModId, StringComparison.OrdinalIgnoreCase));
         if (mod is null)
         {
-            Volatile.Write(ref _coldSnapTransformed, 0);
+            Volatile.Write(ref _transformedTypes, []);
             Volatile.Write(ref _transformedTypesInCombat, 0);
             Volatile.Write(ref _unmirroredTransformedTypes, []);
             Volatile.Write(ref _activeAssembly, null);
@@ -96,13 +118,13 @@ internal static class BetterDefectMobileCompatibility
             ?? throw Unsupported("找不到单卡改造接口");
 
         int count;
-        HashSet<Type> unmirrored = [];
+        HashSet<Type> transformed = [];
         try
         {
             count = (int)(countMethod.Invoke(null, null) ?? -1);
             foreach (CardModel card in ModelDb.AllCards)
                 if (enabledMethod.Invoke(null, [card]) is true)
-                    unmirrored.Add(card.GetType());
+                    transformed.Add(card.GetType());
         }
         catch (Exception error)
         {
@@ -115,13 +137,13 @@ internal static class BetterDefectMobileCompatibility
             foreach (CardModel card in player.Deck.Cards)
             {
                 ValidateCard(card, assembly);
-                if (unmirrored.Contains(card.GetType()))
+                if (transformed.Contains(card.GetType()) && !MirroredTransformations.Contains(card.GetType()))
                     transformedInCombat.Add(card.GetType());
             }
             foreach (CardModel card in player.PlayerCombatState?.AllCards ?? [])
             {
                 ValidateCard(card, assembly);
-                if (unmirrored.Contains(card.GetType()))
+                if (transformed.Contains(card.GetType()) && !MirroredTransformations.Contains(card.GetType()))
                     transformedInCombat.Add(card.GetType());
             }
             foreach (var orb in player.PlayerCombatState?.OrbQueue.Orbs ?? [])
@@ -139,17 +161,18 @@ internal static class BetterDefectMobileCompatibility
             if (power.GetType().Name is "CreativeAiPower" or "HelloWorldPower")
                 Reject($"能力 {power.GetType().Name} 可能生成尚未适配的卡牌");
             if (ModifiedPowerSources.TryGetValue(power.GetType().Name, out string? source)
-                && unmirrored.Any(type => type.Name == source))
+                && transformed.Any(type => type.Name == source))
                 Reject($"已生效的改造能力 {power.GetType().Name} 尚未适配");
         }
 
+        HashSet<Type> unmirrored = [.. transformed.Except(MirroredTransformations)];
+        Volatile.Write(ref _transformedTypes, transformed);
         Volatile.Write(ref _unmirroredTransformedTypes, unmirrored);
         Volatile.Write(ref _transformedTypesInCombat, transformedInCombat.Count);
         Volatile.Write(ref _activeAssembly, assembly);
-        Volatile.Write(ref _coldSnapTransformed, unmirrored.Contains(typeof(ColdSnap)) ? 1 : 0);
-        Entry.Logger.Info($"[CombatSolver/Mobile] BetterDefect safe-play capture: enabled={count}, " +
-            $"unmirroredTypes={unmirrored.Count}, inCombat={transformedInCombat.Count}; " +
-            "transformed cards are excluded from automatic routes.");
+        Entry.Logger.Info($"[CombatSolver/Mobile] BetterDefect reviewed capture: enabled={count}, " +
+            $"mirroredTypes={transformed.Count - unmirrored.Count}, unmirroredTypes={unmirrored.Count}, " +
+            $"unmirroredInCombat={transformedInCombat.Count}.");
     }
 
     internal static void ValidateCardOnPlay(CardModel card)
