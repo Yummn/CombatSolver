@@ -141,6 +141,9 @@ internal static class AfterCardDrawnMirrors
             context.PreviewCard.Type == CardType.Status &&
             CountStatusCardsDrawnThisTurn(context.Simulator, player) <= 1)
         {
+            if (BetterDefectMobileCompatibility.IsTransformed<Iteration>())
+                context.StateStore.Get(context.Card.Original,
+                    static () => new BetterDefectIterationExhaustPredictionState()).Pending = true;
             context.Simulator.Draw(player, power.Amount);
         }
         context.Simulator.AcknowledgeExecutionDispatch();
@@ -286,6 +289,12 @@ internal static class AfterCardDrawnMirrors
         return eventSink.GetStatusCardsDrawnThisTurn(player);
     }
 
+}
+
+internal sealed class BetterDefectIterationExhaustPredictionState : IPredictionStateForkable
+{
+    public bool Pending { get; set; }
+    public object Fork(PredictionForkContext context) => MemberwiseClone();
 }
 
 internal sealed class AfterCardDrawnMirrorContext : CombatCardMirrorContext

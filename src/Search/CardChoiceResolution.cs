@@ -41,6 +41,13 @@ internal static partial class CardChoiceSupport
             selected = choice.Cards.Select(token => Find(pile.Cards, token)).ToList();
         }
 
+        int recycleRefund = BetterDefectMobileCompatibility.IsMirroredRecycle(playedCard.Preview)
+            && selected.Count != 0
+            ? selected[0].Preview.EnergyCost.CostsX
+                ? Math.Max(0, owner.Energy)
+                : selected[0].GetEnergyCostWithModifiers(simulator, owner)
+            : 0;
+
         switch (choice.Effect)
         {
             case PlanChoiceEffect.MoveToHand:
@@ -127,10 +134,10 @@ internal static partial class CardChoiceSupport
         // parent with the additional planned choice, then reaches this boundary again.
         if (simulator.HasPendingChoice)
         {
-            simulator.AppendExecutionContinuation(new PostSelectionExecutionFrame(playedCard));
+            simulator.AppendExecutionContinuation(new PostSelectionExecutionFrame(playedCard, recycleRefund));
             return false;
         }
-        return ApplyPostChoiceEffects(simulator, combat, playedCard);
+        return ApplyPostChoiceEffects(simulator, combat, playedCard, recycleRefund);
     }
 
     public static bool ApplyNoChoiceEffects(
@@ -274,7 +281,8 @@ internal static partial class CardChoiceSupport
         if (selected.Count == 0)
             return true;
         PredictedCard generated = selected[0].Clone();
-        if (source is Abundance or Discovery or Splash)
+        if (source is Abundance or Discovery or Splash
+            || source is WhiteNoise && BetterDefectMobileCompatibility.IsTransformed<WhiteNoise>())
             generated.SetToFreeThisTurn();
         simulator.AddGeneratedCardToCombat(
             generated,
@@ -311,9 +319,22 @@ internal static partial class CardChoiceSupport
     private static bool ApplyPostChoiceEffects(
         CombatPredictionSimulator simulator,
         SimulatedCombatState combat,
-        PredictedCard playedCard)
+        PredictedCard playedCard,
+        int recycleRefund = 0)
     {
         CardModel source = playedCard.Preview;
+        if (BetterDefectMobileCompatibility.IsMirroredRecycle(source))
+        {
+            if (recycleRefund > 0)
+                simulator.GainEnergy(source.Owner, recycleRefund);
+            return !simulator.HasPendingChoice;
+        }
+        if (source is MegaCrit.Sts2.Core.Models.Cards.Stack
+            && BetterDefectMobileCompatibility.IsTransformed<MegaCrit.Sts2.Core.Models.Cards.Stack>())
+        {
+            simulator.AddOrbSlots(source.Owner, 1);
+            return !simulator.HasPendingChoice;
+        }
         switch (source)
         {
             case HiddenDaggers:

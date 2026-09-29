@@ -8,6 +8,7 @@ using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.ValueProps;
 using CombatSolver.Engine.Common;
 using CombatSolver.Engine.Common.Mirrors;
+using CombatSolver.Engine.InCombat.Simulation;
 
 namespace CombatSolver.Engine.InCombat.Mirrors.Hooks.Card;
 
@@ -129,6 +130,31 @@ internal static class AfterCardGeneratedForCombatMirrors
             context.Creator?.Creature == power.Owner)
         {
             context.Simulator.Damage(context.State.HittableEnemies, power.Amount, ValueProp.Unpowered, power.Owner);
+            if (context.Simulator.HasPendingChoice
+                || !BetterDefectMobileCompatibility.IsTransformed<Smokestack>()
+                || power.Owner.Player is not { } player)
+                return;
+            var drawState = context.StateStore.Get(power, () =>
+            {
+                var initial = BetterDefectMobileCompatibility.ReadOncePerRoundDrawState(
+                    power, "BetterDefect.BdCustomSmokestackPowerPatch");
+                return new BetterDefectOncePerRoundDrawPredictionState(initial.Round, initial.Drew);
+            });
+            int round = context.CombatState is SimulatedCombatState combat
+                ? combat.RoundNumber : power.CombatState.RoundNumber;
+            if (drawState.Round != round)
+            {
+                drawState.Round = round;
+                drawState.Drew = false;
+            }
+            if (!drawState.Drew)
+            {
+                drawState.Drew = true;
+                int count = context.StateStore.Get(power, () =>
+                    new BetterDefectSmokestackPredictionState(
+                        BetterDefectMobileCompatibility.ReadSmokestackStackCount(power))).StackCount;
+                context.Simulator.Draw(player, Math.Max(1, count));
+            }
         }
     }
 
@@ -189,5 +215,11 @@ internal sealed class RegalitePredictionState(Regalite relic) : IPredictionState
 {
     public bool UsedThisTurn { get; set; } = relic._usedThisTurn;
 
+    public object Fork(PredictionForkContext context) => MemberwiseClone();
+}
+
+internal sealed class BetterDefectSmokestackPredictionState(int stackCount) : IPredictionStateForkable
+{
+    public int StackCount { get; set; } = stackCount;
     public object Fork(PredictionForkContext context) => MemberwiseClone();
 }

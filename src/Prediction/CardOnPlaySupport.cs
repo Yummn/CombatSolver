@@ -21,7 +21,7 @@ internal static partial class CardOnPlaySupport
     {
         CardModel card = playedCard.Preview;
         Creature owner = card.Owner.Creature;
-        CardPowerOnPlaySupport.Apply(combat, card);
+        CardPowerOnPlaySupport.Apply(simulator, combat, card);
         if (simulator.HasPendingChoice)
             return;
         CardPileOnPlaySupport.Apply(simulator, playedCard);

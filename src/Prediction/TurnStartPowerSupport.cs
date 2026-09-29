@@ -199,6 +199,41 @@ internal static partial class TurnStartPowerSupport
                 continue;
             }
 
+            bool betterDefectCreative = power is CreativeAiPower
+                && BetterDefectMobileCompatibility.IsTransformed<CreativeAi>();
+            bool betterDefectHello = power is HelloWorldPower
+                && BetterDefectMobileCompatibility.IsTransformed<HelloWorld>();
+            if (betterDefectCreative || betterDefectHello)
+            {
+                int offerCount = betterDefectCreative ? power.Amount : power.AmountOnTurnStart;
+                for (int offer = 0; offer < offerCount; offer++)
+                {
+                    var options = simulator.GetDistinctUnlockedCharacterCardsForCombat(
+                            player, 3, simulator.Rng.CombatCardGeneration,
+                            combat.CardMultiplayerConstraint,
+                            candidate => betterDefectCreative
+                                ? candidate.Type == CardType.Power
+                                : candidate.Rarity == CardRarity.Common)
+                        .ToList();
+                    string contextId = betterDefectCreative
+                        ? $"BetterDefect.CreativeAi:{offer}"
+                        : $"BetterDefect.HelloWorld:{offer}";
+                    if (!TurnStartChoiceSupport.ResolveGeneratedToHand(simulator, combat,
+                            player, choices, power.Id.Entry, options, contextId,
+                            maySkip: betterDefectHello))
+                    {
+                        simulator.RejectExecutionContinuation();
+                        return true;
+                    }
+                    if (combat.HasPendingChoice)
+                    {
+                        simulator.RejectExecutionContinuation();
+                        return true;
+                    }
+                }
+                continue;
+            }
+
             CharacterCombatGenerationPool? generationPool = null;
             int count = power.Amount;
             bool ethereal = false;

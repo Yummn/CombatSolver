@@ -724,6 +724,12 @@ internal static class CorePowerSupport
 
     public static void TickDurations(SimulatedCombatState combat)
     {
+        foreach (PowerModel power in combat.EffectivePowers()
+                     .Where(power => power.Amount > 0
+                         && power.GetType().FullName == "BetterDefect.Cards.BdLockOnPower"
+                         && BetterDefectMobileCompatibility.IsMirroredPower(power))
+                     .ToArray())
+            combat.SetPowerAmount(power, power.Amount - 1);
         foreach (Creature creature in combat.Creatures)
         {
             Tick<WeakPower>(combat, creature);

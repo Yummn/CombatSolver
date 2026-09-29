@@ -317,6 +317,19 @@ internal static class CardGenerationCardMirrors
 
     public static void WhiteNoiseOnPlay(WhiteNoise card, CardOnPlayMirrorContext context)
     {
+        if (BetterDefectMobileCompatibility.IsTransformed<WhiteNoise>())
+        {
+            // Native transformed White Noise samples three distinct powers,
+            // then offers an explicit choice. Do not collapse its RNG or its
+            // choice into vanilla's single random generated card.
+            var options = context.Simulator.GetDistinctUnlockedCharacterCardsForCombat(
+                    card.Owner, 3, context.Rng.CombatCardGeneration,
+                    context.CardMultiplayerConstraint,
+                    static candidate => candidate.Type == CardType.Power)
+                .ToList();
+            RecordOptions(context, options);
+            return;
+        }
         var cards = context.Simulator.GetDistinctUnlockedCharacterCardsForCombat(
                 card.Owner,
                 1,

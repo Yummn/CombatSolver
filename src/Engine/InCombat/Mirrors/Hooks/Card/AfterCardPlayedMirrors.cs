@@ -39,6 +39,30 @@ internal static class AfterCardPlayedMirrors
     public static void Invoke(AbstractModel listener, AfterCardPlayedMirrorContext context)
     {
         using var dispatch = context.Simulator.BeginExecutionDispatch();
+        if (listener is PowerModel power
+            && BetterDefectMobileCompatibility.IsMirroredPower(power)
+            && power.GetType().FullName == "BetterDefect.Cards.BdStaticDischargeChargePower")
+        {
+            if (context.PreviewCard.Owner.Creature == power.Owner
+                && context.PreviewCard.Type == CardType.Attack
+                && context.CombatState is SimulatedCombatState combat)
+            {
+                var state = context.StateStore.Get(power, () =>
+                    new BetterDefectStormChargePredictionState(
+                        BetterDefectMobileCompatibility.ReadStormChargeBatches(power)));
+                int serial = combat.GetTotalCardPlayStartSerial(context.Simulator);
+                int consumed = state.Batches.Where(batch => batch.EligibleSerial <= serial)
+                    .Sum(batch => batch.Bonus);
+                if (state.Batches.Count == 0 && power.Amount > 0)
+                    consumed = power.Amount;
+                if (consumed > 0)
+                {
+                    state.Batches.RemoveAll(batch => batch.EligibleSerial <= serial);
+                    combat.SetPowerAmount(power, Math.Max(0, power.Amount - consumed));
+                }
+            }
+            return;
+        }
         Registry.Invoke(listener, context);
     }
 
@@ -784,6 +808,27 @@ internal static class AfterCardPlayedMirrors
         if (TakePairAmount(power, context) is > 0 and var amount && power.Owner.Player is { } player)
         {
             context.Simulator.GainEnergy(player, amount);
+            if (context.Simulator.HasPendingChoice
+                || !BetterDefectMobileCompatibility.IsTransformed<Subroutine>())
+                return;
+            var state = context.StateStore.Get(power, () =>
+            {
+                var initial = BetterDefectMobileCompatibility.ReadOncePerRoundDrawState(
+                    power, "BetterDefect.BdCustomSubroutinePowerPatch");
+                return new BetterDefectOncePerRoundDrawPredictionState(initial.Round, initial.Drew);
+            });
+            int round = context.CombatState is SimulatedCombatState combat
+                ? combat.RoundNumber : power.CombatState.RoundNumber;
+            if (state.Round != round)
+            {
+                state.Round = round;
+                state.Drew = false;
+            }
+            if (!state.Drew)
+            {
+                state.Drew = true;
+                context.Simulator.Draw(player, amount);
+            }
         }
     }
 
@@ -974,6 +1019,14 @@ internal sealed class FlagPredictionState(bool value) : IPredictionStateForkable
 {
     public bool Value { get; set; } = value;
 
+    public object Fork(PredictionForkContext context) => MemberwiseClone();
+}
+
+internal sealed class BetterDefectOncePerRoundDrawPredictionState(int round, bool drew)
+    : IPredictionStateForkable
+{
+    public int Round { get; set; } = round;
+    public bool Drew { get; set; } = drew;
     public object Fork(PredictionForkContext context) => MemberwiseClone();
 }
 

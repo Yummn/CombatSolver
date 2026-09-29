@@ -214,6 +214,9 @@ internal sealed class PredictionModHookSubscriberCapture
                 "PowerGiver summon powers are configured",
                 scope);
         }
+        if (subscriber is PowerModel reviewedPower
+            && BetterDefectMobileCompatibility.IsMirroredPower(reviewedPower))
+            return;
         if (PredictionModModelSupport.IsBaseLibCardModifier(subscriber)
             || KnownPreRootSubscriberTypeNames.Contains(type.FullName ?? string.Empty)
             || (!isBaseGame && mod?.manifest?.affectsGameplay is false))

@@ -2,12 +2,13 @@ using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Powers;
+using CombatSolver.Engine.InCombat.Simulation;
 
 namespace CombatSolver;
 
 internal static partial class CardPowerOnPlaySupport
 {
-    public static void Apply(SimulatedCombatState combat, CardModel card)
+    public static void Apply(CombatPredictionSimulator simulator, SimulatedCombatState combat, CardModel card)
     {
         Creature owner = card.Owner.Creature;
         switch (card)
@@ -204,6 +205,6 @@ internal static partial class CardPowerOnPlaySupport
                 combat.Apply<RupturePower>(owner, card.DynamicVars.Strength.IntValue, owner);
                 break;
         }
-        ApplyLate(combat, card, owner);
+        ApplyLate(simulator, combat, card, owner);
     }
 }

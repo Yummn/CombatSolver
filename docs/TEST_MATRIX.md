@@ -1,9 +1,10 @@
 # CombatSolver 测试清单
 
-## BetterDefect 改造选牌续作（2026-09-29，未验收）
+## BetterDefect 当前 59 张改造适配（2026-09-29）
 
-- 手机 v0.111.0 编译：`CombatSolverMobileTest=true` 和普通发布构建均 0 警告、0 错误；测试构建临时开放 `AllForOne`、`Rebound` 两个候选镜像，普通构建仍拒绝两者。
-- PC v0.107.1 隔离真实游戏：BetterDefect v0.11.65 原生「弹回」「万物一心」效果分别通过单卡测试。PC 上无法运行本分支的 v0.111.0 求解器，故未测试 actual-vs-predicted 差分、自动出牌或其余 22 张未适配牌。手机当前无 ADB 连接。
+- 手机 v0.111.0：原 37 张与本批 22 张全部具备镜像／捕获数据通道；22 张各有隔离 BetterDefect + CombatSolver + RitsuLib 真机 actual-vs-predicted 基本夹具通过，另外验证升级骚动、创造性 AI／你好世界回合开始选牌。59 项改造保存档的短搜夹具通过零未镜像类型、真实出牌、第二回合续用及零意外重算。详见 `mobile-betterdefect-59-adaptation.md` 和 `.port-build/mobile-betterdefect-compat-20260928/bd59-*-result.json`。
+- 2026-09-30 追加终版源码真机验证：59 个保存的改造 ID 静态匹配适配名单；`bd59-final-final-short-search-corrected-result.json` 首行动搜索通过；`bd59-final-subroutine-power-continuation-single-result.json` 在已生效改造子程序能力下实际出牌并准确复用第二回合，意外重算 0 次。此前一次三怪全自动复测未生成结果，不作为通过证据。
+- PC v0.107.1 隔离真实游戏仅验证 BetterDefect v0.11.65 原生「弹回」「万物一心」效果；不能作为 v0.111.0 求解器的验收。多模组混合、所有升级／附魔组合、未知新增卡和整局策略质量未验证，保持显式保护。
 
 ## Android v0.111.0 BetterDefect 安全自动路线（2026-09-29）
 

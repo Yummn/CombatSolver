@@ -146,6 +146,21 @@ internal sealed partial class SimulatedCombatState
             && method.IsGenericMethodDefinition);
     private static readonly ConcurrentDictionary<Type, ApplyTemporaryDexterityDelegate>
         TemporaryDexterityDelegates = new();
+    private static readonly MethodInfo GenericTemporaryStrengthGainMethod = typeof(SimulatedCombatState)
+        .GetMethods(BindingFlags.Instance | BindingFlags.Public)
+        .Single(method => method.Name == nameof(ApplyTemporaryStrengthGain)
+            && method.IsGenericMethodDefinition);
+    private static readonly MethodInfo GenericTemporaryFocusMethod = typeof(SimulatedCombatState)
+        .GetMethods(BindingFlags.Instance | BindingFlags.Public)
+        .Single(method => method.Name == nameof(ApplyTemporaryFocus)
+            && method.IsGenericMethodDefinition);
+    private static readonly MethodInfo GenericTemporaryFocusLossMethod = typeof(SimulatedCombatState)
+        .GetMethods(BindingFlags.Instance | BindingFlags.Public)
+        .Single(method => method.Name == nameof(ApplyTemporaryFocusLoss)
+            && method.IsGenericMethodDefinition);
+    private static readonly ConcurrentDictionary<Type, ApplyPowerDelegate> TemporaryStrengthGainDelegates = new();
+    private static readonly ConcurrentDictionary<Type, ApplyPowerDelegate> TemporaryFocusGainDelegates = new();
+    private static readonly ConcurrentDictionary<Type, ApplyPowerDelegate> TemporaryFocusLossDelegates = new();
     private static readonly FieldInfo NemesisShouldApplyIntangibleField =
         typeof(NemesisPower).GetField("_shouldApplyIntangible", BindingFlags.Instance | BindingFlags.NonPublic)
         ?? throw new MissingFieldException(typeof(NemesisPower).FullName, "_shouldApplyIntangible");
@@ -704,6 +719,23 @@ internal sealed partial class SimulatedCombatState
         apply(this, target, amount, applier);
     }
 
+    public void ApplyReviewedTemporaryPower(Type powerType, Creature target, int amount,
+        Creature? applier, bool focus, bool positive)
+    {
+        if (!typeof(TemporaryFocusPower).IsAssignableFrom(powerType) && focus
+            || !typeof(TemporaryStrengthPower).IsAssignableFrom(powerType) && !focus)
+            throw new ArgumentException($"{powerType.FullName} is not the expected temporary power family.");
+        MethodInfo method = focus
+            ? positive ? GenericTemporaryFocusMethod : GenericTemporaryFocusLossMethod
+            : GenericTemporaryStrengthGainMethod;
+        var cache = focus
+            ? positive ? TemporaryFocusGainDelegates : TemporaryFocusLossDelegates
+            : TemporaryStrengthGainDelegates;
+        ApplyPowerDelegate apply = cache.GetOrAdd(powerType,
+            type => method.MakeGenericMethod(type).CreateDelegate<ApplyPowerDelegate>());
+        apply(this, target, amount, applier);
+    }
+
     public void ApplyPowerSkippingNextDurationTick(
         Type powerType,
         Creature target,
@@ -1118,6 +1150,17 @@ internal sealed partial class SimulatedCombatState
 
     public void RestoreTemporaryFocus()
     {
+        foreach (TemporaryFocusPower power in EffectivePowers().OfType<TemporaryFocusPower>()
+                     .Where(BetterDefectMobileCompatibility.IsMirroredTemporaryPower)
+                     .ToArray())
+        {
+            if (power.Amount <= 0)
+                continue;
+            int focusDelta = power.TypeForCurrentAmount == PowerType.Buff
+                ? -power.Amount : power.Amount;
+            SetPowerAmount(power, 0);
+            Apply<FocusPower>(power.Owner, focusDelta, power.Owner);
+        }
         foreach (Creature creature in Creatures)
         {
             int amount = GetAmount<HotfixPower>(creature)
@@ -2296,6 +2339,7 @@ internal sealed partial class SimulatedCombatState
         AddFeralStates(ref fingerprint, simulator, effectivePowers);
         AddJugglingStates(ref fingerprint, simulator, effectivePowers);
         AddTurnStartStates(ref fingerprint, simulator, effectivePowers);
+        AddBetterDefectHiddenStates(ref fingerprint, simulator, effectivePowers);
         AppendPowerLifecycleFingerprint(ref fingerprint);
         AddNemesisStates(ref fingerprint, effectivePowers);
         AddTenderStates(ref fingerprint, effectivePowers);

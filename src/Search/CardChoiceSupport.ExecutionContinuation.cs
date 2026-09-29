@@ -43,11 +43,11 @@ internal static partial class CardChoiceSupport
                 Source, Selected, Deaths, NextIndex, AwaitedHistoryStart);
     }
 
-    private sealed record PostSelectionExecutionFrame(PredictedCard Card) : ICombatPredictionExecutionFrame
+    private sealed record PostSelectionExecutionFrame(PredictedCard Card, int RecycleRefund) : ICombatPredictionExecutionFrame
     {
         public ICombatPredictionExecutionFrame Fork(PredictionForkContext context) => this with { Card = context.RequireRemap(Card) };
         public bool Resume(CombatPredictionSimulator simulator)
-            => ApplyPostChoiceEffects(simulator, (SimulatedCombatState)simulator.State.CombatState, Card);
+            => ApplyPostChoiceEffects(simulator, (SimulatedCombatState)simulator.State.CombatState, Card, RecycleRefund);
     }
 
     private sealed record RestoreBurningPactPileFrame(PredictedCard Card) : ICombatPredictionExecutionFrame

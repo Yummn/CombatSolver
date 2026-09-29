@@ -11,6 +11,7 @@ using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using CombatSolver.Engine.Common;
 using CombatSolver.Engine.InCombat.Mirrors.Orbs;
 using CombatSolver.Engine.InCombat.Simulation;
+using CombatSolver.Engine.InCombat.Mirrors.Hooks.Card;
 
 namespace CombatSolver;
 
@@ -449,9 +450,64 @@ internal sealed record ContinuationStamp(string StateText)
             if (power is OrbitPower orbit)
                 text.Append("EnergyRemainder=").Append(simulator == null ? (4 - orbit.DisplayAmount) % 4
                     : ((SimulatedCombatState)simulator.State.CombatState).GetOrbitEnergyRemainder(orbit)).Append(',');
+            AppendBetterDefectPowerState(text, power, simulator);
             text.Append("],");
         }
     }
+
+    private static void AppendBetterDefectPowerState(
+        StringBuilder text, PowerModel power, CombatPredictionSimulator? simulator)
+    {
+        if (!BetterDefectMobileCompatibility.HasReviewedMobileMod)
+            return;
+        if (power is SubroutinePower
+            && BetterDefectMobileCompatibility.IsTransformed<Subroutine>())
+        {
+            var state = simulator is null
+                ? BetterDefectMobileCompatibility.ReadNativeOncePerRoundDrawState(
+                    power, "BetterDefect.BdCustomSubroutinePowerPatch")
+                : ToPair(simulator.StateStore.Peek(power, () =>
+                {
+                    var initial = BetterDefectMobileCompatibility.ReadOncePerRoundDrawState(
+                        power, "BetterDefect.BdCustomSubroutinePowerPatch");
+                    return new BetterDefectOncePerRoundDrawPredictionState(initial.Round, initial.Drew);
+                }));
+            text.Append("BDSubroutine=").Append(state.Round).Append(':').Append(state.Drew).Append(',');
+        }
+        else if (power is SmokestackPower smokestack
+            && BetterDefectMobileCompatibility.IsTransformed<Smokestack>())
+        {
+            var state = simulator is null
+                ? BetterDefectMobileCompatibility.ReadNativeOncePerRoundDrawState(
+                    power, "BetterDefect.BdCustomSmokestackPowerPatch")
+                : ToPair(simulator.StateStore.Peek(power, () =>
+                {
+                    var initial = BetterDefectMobileCompatibility.ReadOncePerRoundDrawState(
+                        power, "BetterDefect.BdCustomSmokestackPowerPatch");
+                    return new BetterDefectOncePerRoundDrawPredictionState(initial.Round, initial.Drew);
+                }));
+            int stacks = simulator is null
+                ? BetterDefectMobileCompatibility.ReadNativeSmokestackStackCount(smokestack)
+                : simulator.StateStore.Peek(power, () => new BetterDefectSmokestackPredictionState(
+                    BetterDefectMobileCompatibility.ReadSmokestackStackCount(smokestack))).StackCount;
+            text.Append("BDSmokestack=").Append(state.Round).Append(':').Append(state.Drew)
+                .Append(':').Append(stacks).Append(',');
+        }
+        else if (power.GetType().FullName == "BetterDefect.Cards.BdStaticDischargeChargePower")
+        {
+            var batches = simulator is null
+                ? BetterDefectMobileCompatibility.ReadNativeStormChargeBatches(power)
+                : simulator.StateStore.Peek(power, () => new BetterDefectStormChargePredictionState(
+                    BetterDefectMobileCompatibility.ReadStormChargeBatches(power))).Batches;
+            text.Append("BDStormBatches=");
+            foreach (var batch in batches)
+                text.Append(batch.EligibleSerial).Append(':').Append(batch.Bonus).Append('/');
+            text.Append(',');
+        }
+    }
+
+    private static (int Round, bool Drew) ToPair(BetterDefectOncePerRoundDrawPredictionState state)
+        => (state.Round, state.Drew);
 
     private static void AppendRng(
         StringBuilder text,

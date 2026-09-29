@@ -136,6 +136,12 @@ internal static class CardDrawCardMirrors
         {
             context.Simulator.Draw(card.Owner, card.DynamicVars.Cards.BaseValue);
         }
+        else if (BetterDefectMobileCompatibility.IsTransformed<Ftl>())
+        {
+            combat.ApplyPower(BetterDefectMobileCompatibility.ReviewedPowerType(
+                    "BetterDefect.Cards.BdLockOnPower"),
+                context.Target, card.IsUpgraded ? 2 : 1, card.Owner.Creature);
+        }
     }
 
     public static void HuddleUpOnPlay(HuddleUp card, CardOnPlayMirrorContext context)
@@ -205,17 +211,69 @@ internal static class CardDrawCardMirrors
         if (context.Simulator.HasPendingChoice)
             return;
 
-        IReadOnlyList<PredictedCard> drawnCards = context.Simulator.Draw(
-            card.Owner,
+        IReadOnlyList<PredictedCard> drawnCards = context.Simulator.Draw(card.Owner,
             card.DynamicVars.Cards.IntValue);
         if (context.Simulator.HasPendingChoice)
+        {
+            if (drawnCards is not List<PredictedCard> pendingDrawn)
+                throw new InvalidOperationException("刮削抽牌挂起后缺少可继续的选牌列表。");
+            context.Simulator.AppendExecutionContinuation(new ScrapePostDrawFrame(context.Card, pendingDrawn));
             return;
-        var cardsToDiscard = drawnCards
-            .Where(drawnCard =>
-                drawnCard.Preview.EnergyCost.CostsX ||
-                drawnCard.GetEnergyCostValueWithModifiers(context.Simulator) != 0)
-            .ToList();
-        context.Simulator.Discard(cardsToDiscard);
+        }
+        FinishScrape(context.Simulator, context.Card, drawnCards);
+    }
+
+    private static bool FinishScrape(CombatPredictionSimulator simulator, PredictedCard source,
+        IReadOnlyList<PredictedCard> drawn)
+    {
+        bool transformed = BetterDefectMobileCompatibility.IsTransformed<Scrape>();
+        PredictedCard[] discarded = drawn.Where(candidate =>
+            candidate.Preview.EnergyCost.CostsX || candidate.Preview.HasStarCostX
+            || candidate.Preview.CurrentStarCost > 0
+            || (transformed
+                ? candidate.GetEnergyCostValueWithModifiers(simulator)
+                : candidate.Preview.EnergyCost.GetWithModifiers(CostModifiers.Local)) != 0).ToArray();
+        int retained = drawn.Count - discarded.Length;
+        simulator.Discard(discarded);
+        if (simulator.HasPendingChoice)
+        {
+            simulator.AppendExecutionContinuation(new ScrapeAfterDiscardFrame(source, retained));
+            return false;
+        }
+        return FinishScrapeStrength(simulator, source, retained);
+    }
+
+    private static bool FinishScrapeStrength(CombatPredictionSimulator simulator, PredictedCard source, int retained)
+    {
+        if (retained > 0 && BetterDefectMobileCompatibility.IsTransformed<Scrape>())
+        {
+            if (simulator.State.CombatState is not SimulatedCombatState combat)
+                throw new InvalidOperationException("刮削缺少分支战斗状态。");
+            BetterDefectMobileCompatibility.ApplyReviewedTemporaryPower(combat,
+                "BetterDefect.Cards.BdScrapeTemporaryStrengthPower", source.Preview,
+                retained, focus: false, positive: true);
+        }
+        return !simulator.HasPendingChoice;
+    }
+
+    private sealed record ScrapePostDrawFrame(PredictedCard Source, List<PredictedCard> Drawn)
+        : ICombatPredictionExecutionFrame
+    {
+        public void PrepareFork(PredictionForkContext context)
+            => CombatPredictionSimulator.ForkExecutionCardList(Drawn, context);
+        public ICombatPredictionExecutionFrame Fork(PredictionForkContext context)
+            => this with { Source = context.RequireRemap(Source), Drawn = context.RequireRemap(Drawn) };
+        public bool Resume(CombatPredictionSimulator simulator)
+            => FinishScrape(simulator, Source, Drawn);
+    }
+
+    private sealed record ScrapeAfterDiscardFrame(PredictedCard Source, int Retained)
+        : ICombatPredictionExecutionFrame
+    {
+        public ICombatPredictionExecutionFrame Fork(PredictionForkContext context)
+            => this with { Source = context.RequireRemap(Source) };
+        public bool Resume(CombatPredictionSimulator simulator)
+            => FinishScrapeStrength(simulator, Source, Retained);
     }
 
     public static void ScrawlOnPlay(Scrawl card, CardOnPlayMirrorContext context)

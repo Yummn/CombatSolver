@@ -2,12 +2,15 @@ using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Powers;
+using CombatSolver.Engine.InCombat.Simulation;
+using CombatSolver.Engine.InCombat.Mirrors.Hooks.Card;
 
 namespace CombatSolver;
 
 internal static partial class CardPowerOnPlaySupport
 {
     private static void ApplyLate(
+        CombatPredictionSimulator simulator,
         SimulatedCombatState combat,
         CardModel card,
         Creature owner)
@@ -36,7 +39,32 @@ internal static partial class CardPowerOnPlaySupport
                 combat.Apply<SleightOfFleshPower>(owner, card.DynamicVars["SleightOfFleshPower"].IntValue, owner);
                 break;
             case Smokestack:
+                if (BetterDefectMobileCompatibility.IsTransformed<Smokestack>())
+                {
+                    SmokestackPower? prior = combat.EffectivePowers().OfType<SmokestackPower>()
+                        .FirstOrDefault(power => power.Owner == owner && power.Amount > 0);
+                    if (prior is not null)
+                    {
+                        _ = simulator.StateStore.Get(prior, () =>
+                            new BetterDefectSmokestackPredictionState(
+                                BetterDefectMobileCompatibility.ReadSmokestackStackCount(prior)));
+                        _ = simulator.StateStore.Get(prior, () =>
+                        {
+                            var initial = BetterDefectMobileCompatibility.ReadOncePerRoundDrawState(
+                                prior, "BetterDefect.BdCustomSmokestackPowerPatch");
+                            return new BetterDefectOncePerRoundDrawPredictionState(initial.Round, initial.Drew);
+                        });
+                    }
+                }
                 combat.Apply<SmokestackPower>(owner, card.DynamicVars["SmokestackPower"].IntValue, owner);
+                if (BetterDefectMobileCompatibility.IsTransformed<Smokestack>())
+                {
+                    SmokestackPower current = combat.EffectivePowers().OfType<SmokestackPower>()
+                        .Single(power => power.Owner == owner && power.Amount > 0);
+                    var state = simulator.StateStore.Get(current, () =>
+                        new BetterDefectSmokestackPredictionState(0));
+                    state.StackCount++;
+                }
                 break;
             case SpectrumShift:
                 combat.Apply<SpectrumShiftPower>(owner, card.DynamicVars.Cards.IntValue, owner);
@@ -45,7 +73,12 @@ internal static partial class CardPowerOnPlaySupport
                 combat.Apply<SpeedsterPower>(owner, card.DynamicVars["SpeedsterPower"].IntValue, owner);
                 break;
             case Spinner:
-                combat.Apply<SpinnerPower>(owner, card.DynamicVars["SpinnerPower"].IntValue, owner);
+                if (BetterDefectMobileCompatibility.IsTransformed<Spinner>())
+                    combat.ApplyPower(BetterDefectMobileCompatibility.ReviewedPowerType(
+                        "BetterDefect.Cards.BdSpinnerNoDecayPower"), owner,
+                        card.DynamicVars["SpinnerPower"].IntValue, owner);
+                else
+                    combat.Apply<SpinnerPower>(owner, card.DynamicVars["SpinnerPower"].IntValue, owner);
                 break;
             case SpiritOfAsh:
                 combat.Apply<SpiritOfAshPower>(owner, card.DynamicVars["BlockOnExhaust"].IntValue, owner);
@@ -57,7 +90,12 @@ internal static partial class CardPowerOnPlaySupport
                 combat.Apply<PlatingPower>(owner, card.DynamicVars["PlatingPower"].IntValue, owner);
                 break;
             case Storm:
-                combat.Apply<StormPower>(owner, card.DynamicVars["StormPower"].IntValue, owner);
+                if (BetterDefectMobileCompatibility.IsTransformed<Storm>())
+                    combat.ApplyPower(BetterDefectMobileCompatibility.ReviewedPowerType(
+                        "BetterDefect.Cards.BdStormChargePower"), owner,
+                        card.DynamicVars["StormPower"].IntValue, owner);
+                else
+                    combat.Apply<StormPower>(owner, card.DynamicVars["StormPower"].IntValue, owner);
                 break;
             case Stratagem:
                 combat.Apply<StratagemPower>(owner, 1, owner);

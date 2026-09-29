@@ -41,6 +41,13 @@ internal static class AfterEnergyResetMirrors
 
     public static void Invoke(PowerModel power, AfterEnergyResetMirrorContext context)
     {
+        if (BetterDefectMobileCompatibility.IsMirroredPower(power)
+            && power.GetType().FullName == "BetterDefect.Cards.BdSpinnerNoDecayPower")
+        {
+            if (power.Owner.Player == context.Player)
+                context.Simulator.OrbChannel<GlassOrb>(context.Player, power.Amount);
+            return;
+        }
         Registry.Invoke(power, context);
     }
 

@@ -30,7 +30,8 @@ internal static partial class CardOnPlayMirrors
 
     public static bool CanMirror(CardModel card)
     {
-        return Registry.HasRegisteredHandler(card);
+        return Registry.HasRegisteredHandler(card)
+            || BetterDefectMobileCompatibility.CanMirrorCustomCard(card);
     }
 
     public static bool IsOnPlayInvocation(PredictionInvocation invocation)
@@ -44,6 +45,18 @@ internal static partial class CardOnPlayMirrors
         CardPlay cardPlay)
     {
         BetterDefectMobileCompatibility.ValidateCardOnPlay(card.MutablePreview);
+        if (BetterDefectMobileCompatibility.CanMirrorCustomCard(card.MutablePreview))
+        {
+            MirrorDispatchResult customResult;
+            using (simulator.BeginExecutionDispatch())
+                _ = BetterDefectMobileCompatibility.TryInvokeCustomCard(
+                    simulator, card, cardPlay, out customResult);
+            if (simulator.HasPendingChoice)
+                simulator.AppendExecutionContinuation(new CardSpecExecutionFrame(card, cardPlay.Target));
+            else
+                ApplyRemainingCardSpec(simulator, card, cardPlay.Target);
+            return customResult;
+        }
         // The mutable preview is the receiver because OnPlay handlers may mutate the played card.
         // CardOnPlayMirrorContext maps its source back to the original card and exposes that same
         // original model as the StateStore key.
@@ -189,6 +202,7 @@ internal static partial class CardOnPlayMirrors
         registry.Register<StrikeRegent>(GeneralCardMirrors.GeneralAttackOnPlay);
         registry.Register<StrikeNecrobinder>(GeneralCardMirrors.GeneralAttackOnPlay);
         registry.Register<StrikeDefect>(GeneralCardMirrors.GeneralAttackOnPlay);
+        registry.Register<Hyperbeam>(GeneralCardMirrors.GeneralAttackOnPlay);
         registry.Register<Fisticuffs>(GeneralCardMirrors.GeneralAttackOnPlay);
 
         registry.Register<DefendIronclad>(GeneralCardMirrors.GeneralBlockOnPlay);
@@ -196,6 +210,31 @@ internal static partial class CardOnPlayMirrors
         registry.Register<DefendRegent>(GeneralCardMirrors.GeneralBlockOnPlay);
         registry.Register<DefendNecrobinder>(GeneralCardMirrors.GeneralBlockOnPlay);
         registry.Register<DefendDefect>(GeneralCardMirrors.GeneralBlockOnPlay);
+        registry.Register<MegaCrit.Sts2.Core.Models.Cards.Stack>(static (card, context) =>
+        {
+            if (!BetterDefectMobileCompatibility.IsTransformed<MegaCrit.Sts2.Core.Models.Cards.Stack>())
+                context.GainBlock(card.Owner.Creature);
+        });
+        registry.Register<Barrage>(static (card, context) =>
+        {
+            var orbs = context.OwnerState.OrbQueue.Orbs.ToArray();
+            if (!BetterDefectMobileCompatibility.IsTransformed<Barrage>())
+            {
+                context.AttackSingle(hitCount: orbs.Length);
+                return;
+            }
+            if (context.CombatState is not SimulatedCombatState combat)
+                throw new InvalidOperationException("弹幕齐射缺少分支战斗状态。");
+            BetterDefectMobileCompatibility.ApplyReviewedTemporaryPower(combat,
+                "BetterDefect.Cards.BdBarrageTemporaryFocusPower", card,
+                card.DynamicVars.Damage.IntValue, focus: true, positive: true);
+            foreach (var orb in orbs)
+            {
+                context.Simulator.OrbPassive(orb);
+                if (context.Simulator.HasPendingChoice)
+                    return;
+            }
+        });
 
         registry.RegisterStrictInferrer(CardOnPlayInferrer.InferStrict);
         registry.RegisterInferrer(CardOnPlayInferrer.Infer);

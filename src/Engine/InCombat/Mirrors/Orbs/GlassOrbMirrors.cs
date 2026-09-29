@@ -1,6 +1,7 @@
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Models.Orbs;
 using MegaCrit.Sts2.Core.ValueProps;
+using CombatSolver.Engine.InCombat.Simulation;
 
 namespace CombatSolver.Engine.InCombat.Mirrors.Orbs;
 
@@ -21,7 +22,12 @@ internal static class GlassOrbMirrors
             return;
         }
 
-        orb._passiveVal = Math.Max(0m, orb._passiveVal - 1m);
+        bool noDecay = context.State.CombatState is SimulatedCombatState combat
+            && combat.EffectivePowers().Any(power => power.Owner == orb.Owner.Creature
+                && power.Amount > 0 && BetterDefectMobileCompatibility.IsMirroredPower(power)
+                && power.GetType().FullName == "BetterDefect.Cards.BdSpinnerNoDecayPower");
+        if (!noDecay)
+            orb._passiveVal = Math.Max(0m, orb._passiveVal - 1m);
         Damage(orb, context, passiveVal);
     }
 

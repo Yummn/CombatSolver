@@ -1,6 +1,7 @@
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Models.Relics;
 using CombatSolver.Engine.Common;
@@ -95,6 +96,12 @@ internal static class ModifyCardPlayCountMirrors
                 entry.Actor == power.Owner &&
                 entry.CardPlay.IsFirstInSeries &&
                 entry.HappenedThisTurn(power.CombatState));
+
+        // BetterDefect v0.11.66 moves the replay from the first card of the
+        // turn to the second one. The native patch counts the currently
+        // starting first-in-series play, hence == 1 (not == 2).
+        if (BetterDefectMobileCompatibility.IsTransformed<EchoForm>())
+            return count == 1 ? context.PlayCount + power.Amount : context.PlayCount;
 
         return count < power.Amount
             ? context.PlayCount + 1

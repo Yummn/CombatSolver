@@ -46,6 +46,25 @@ internal static class AfterDamageReceivedMirrors
 
     public static void Invoke(AbstractModel listener, AfterDamageReceivedMirrorContext context)
     {
+        if (listener is PowerModel power
+            && BetterDefectMobileCompatibility.IsMirroredPower(power)
+            && power.GetType().FullName == "BetterDefect.Cards.BdStaticDischargePower")
+        {
+            if (context.Target == power.Owner && context.Result.UnblockedDamage > 0
+                && context.Dealer is not null
+                && (context.Props & ValueProp.Move) != 0
+                && (context.Props & (ValueProp.Unpowered | ValueProp.Unblockable)) == 0
+                && power.Owner.Player is { } player)
+            {
+                context.Simulator.OrbChannel<MegaCrit.Sts2.Core.Models.Orbs.LightningOrb>(
+                    player, power.Amount);
+                if (!context.Simulator.HasPendingChoice
+                    && BetterDefectMobileCompatibility.IsTransformedCustomCard(
+                        "BetterDefect.Cards.BdStaticDischarge"))
+                    context.Simulator.GainBlock(power.Owner, 3m, ValueProp.Unpowered);
+            }
+            return;
+        }
         Registry.Invoke(listener, context);
     }
 

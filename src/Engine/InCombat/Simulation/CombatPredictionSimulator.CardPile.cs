@@ -8,6 +8,7 @@ using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
 using CombatSolver.Engine.Common;
 using CombatSolver.Engine.InCombat.Mirrors;
+using CombatSolver.Engine.InCombat.Mirrors.Hooks.Card;
 
 namespace CombatSolver.Engine.InCombat.Simulation;
 
@@ -94,6 +95,25 @@ internal sealed partial class CombatPredictionSimulator
                 return false;
             }
             History.CardDrawResolved(entry, card);
+        }
+        // BetterDefect's Iteration exhausts the first Status only after the
+        // containing Draw command (including nested draws) has finished. An
+        // AfterCardDrawn exhaust would cut short the native draw lifecycle.
+        if (BetterDefectMobileCompatibility.IsTransformed<MegaCrit.Sts2.Core.Models.Cards.Iteration>()
+            && State.CombatState is SimulatedCombatState combat
+            && combat.GetAmount<MegaCrit.Sts2.Core.Models.Powers.IterationPower>(player.Creature) > 0)
+        {
+            foreach (PredictedCard drawn in drawnCards)
+            {
+                if (!StateStore.TryGetReadOnly<BetterDefectIterationExhaustPredictionState>(
+                        drawn.Original, out var marker) || marker?.Pending != true)
+                    continue;
+                marker.Pending = false;
+                if (state.Hand.Cards.Contains(drawn))
+                    Exhaust(drawn);
+                if (HasPendingChoice)
+                    return false;
+            }
         }
         return true;
     }

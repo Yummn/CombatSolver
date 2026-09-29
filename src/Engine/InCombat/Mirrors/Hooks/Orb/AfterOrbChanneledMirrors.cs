@@ -2,6 +2,8 @@ using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Relics;
+using MegaCrit.Sts2.Core.Models.Powers;
+using MegaCrit.Sts2.Core.Models.Orbs;
 using CombatSolver.Engine.Common;
 using CombatSolver.Engine.Common.Mirrors;
 
@@ -19,6 +21,33 @@ internal static class AfterOrbChanneledMirrors
 
     public static void Invoke(AbstractModel listener, AfterOrbChanneledMirrorContext context)
     {
+        if (listener is PowerModel power
+            && BetterDefectMobileCompatibility.IsMirroredPower(power)
+            && power.GetType().FullName == "BetterDefect.Cards.BdStormChargePower")
+        {
+            if (context.Player.Creature == power.Owner && context.Orb is LightningOrb
+                && context.CombatState is SimulatedCombatState combat)
+            {
+                Type chargeType = BetterDefectMobileCompatibility.ReviewedPowerType(
+                    "BetterDefect.Cards.BdStaticDischargeChargePower");
+                PowerModel? prior = combat.EffectivePowers().FirstOrDefault(candidate =>
+                    candidate.Owner == power.Owner && candidate.GetType() == chargeType
+                    && candidate.Amount > 0);
+                if (prior is not null)
+                    _ = context.StateStore.Get(prior, () =>
+                        new BetterDefectStormChargePredictionState(
+                            BetterDefectMobileCompatibility.ReadStormChargeBatches(prior)));
+                combat.ApplyPower(chargeType, power.Owner, power.Amount, power.Owner);
+                PowerModel current = combat.EffectivePowers().Single(candidate =>
+                    candidate.Owner == power.Owner && candidate.GetType() == chargeType
+                    && candidate.Amount > 0);
+                var state = context.StateStore.Get(current, () =>
+                    new BetterDefectStormChargePredictionState([]));
+                state.Batches.Add((combat.GetTotalCardPlayStartSerial(context.Simulator) + 1,
+                    power.Amount));
+            }
+            return;
+        }
         Registry.Invoke(listener, context);
     }
 

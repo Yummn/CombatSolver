@@ -137,7 +137,8 @@ internal static partial class TurnStartChoiceSupport
         TurnStartChoiceCursor? cursor,
         string sourceId,
         IReadOnlyList<PredictedCard> options,
-        string contextId = "")
+        string contextId = "",
+        bool maySkip = false)
     {
         if (options.Count == 0)
             return true;
@@ -145,7 +146,7 @@ internal static partial class TurnStartChoiceSupport
         CardChoiceSpec spec = new(
             PlanChoiceEffect.GenerateToHand,
             PileType.None,
-            1,
+            maySkip ? 0 : 1,
             1,
             options,
             options,
@@ -323,6 +324,9 @@ internal static partial class TurnStartChoiceSupport
         switch (request.Effect)
         {
             case PlanChoiceEffect.GenerateToHand:
+                if (request.ContextId.StartsWith("BetterDefect.CreativeAi:", StringComparison.Ordinal))
+                    foreach (PredictedCard generated in selected)
+                        generated.SetToFreeThisTurn();
                 simulator.AddGeneratedCardsToCombat(selected, PileType.Hand, player,
                     CardPilePosition.Bottom, CardGenerationResultKind.Random);
                 break;

@@ -256,6 +256,33 @@ internal static class CardSelectionCardMirrors
         if (context.Simulator.HasPendingChoice)
             return;
 
+        if (BetterDefectMobileCompatibility.IsTransformed<Uproar>())
+        {
+            HashSet<PredictedCard> selected = [];
+            for (int i = 0; i < (card.IsUpgraded ? 2 : 1); i++)
+            {
+                var eligible = context.OwnerState.DrawPile.Cards
+                    .Where(candidate => !selected.Contains(candidate)
+                        && candidate.Preview.Type == CardType.Attack
+                        && !candidate.HasKeyword(context.State, CardKeyword.Unplayable))
+                    .ToList();
+                if (eligible.Count == 0)
+                    break;
+                int Rank(PredictedCard candidate) => candidate.Preview.EnergyCost.CostsX
+                    ? Math.Max(0, context.OwnerState.Energy)
+                    : Math.Max(0, candidate.GetEnergyCostWithModifiers(context.Simulator, context.OwnerState));
+                int highest = eligible.Max(Rank);
+                PredictedCard chosen = eligible.Where(candidate => Rank(candidate) == highest)
+                    .ToList().StableShuffle(context.Rng.Shuffle).First();
+                selected.Add(chosen);
+                context.Simulator.History.CardsSelected([chosen]);
+                context.Simulator.AutoPlay(chosen, context.Target, nestedChoiceSourceId: card.Id.Entry);
+                if (context.Simulator.HasPendingChoice || context.Simulator.IsOverOrEnding)
+                    return;
+            }
+            return;
+        }
+
         var attackCards = context.OwnerState.DrawPile.Cards
             .Where(predictedCard => predictedCard.Preview.Type == CardType.Attack)
             .ToList();

@@ -4,6 +4,7 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.ValueProps;
+using MegaCrit.Sts2.Core.Extensions;
 using CombatSolver.Engine.Common;
 using CombatSolver.Engine.Common.Mirrors;
 using CombatSolver.Engine.InCombat.Mirrors.Hooks.Attack;
@@ -44,6 +45,25 @@ internal static class ModifyDamageMirrors
 
     public static decimal InvokeAdditive(AbstractModel listener, ModifyDamageMirrorContext context)
     {
+        if (listener is PowerModel power
+            && BetterDefectMobileCompatibility.IsMirroredPower(power)
+            && power.GetType().FullName == "BetterDefect.Cards.BdStaticDischargeChargePower")
+        {
+            if (context.Dealer != power.Owner
+                || context.CardSource?.Preview.Type != MegaCrit.Sts2.Core.Entities.Cards.CardType.Attack
+                || !context.Props.IsPoweredAttack()
+                || context.CombatState is not SimulatedCombatState combat)
+                return 0m;
+            var state = context.StateStore.Get(power, () =>
+                new BetterDefectStormChargePredictionState(
+                    BetterDefectMobileCompatibility.ReadStormChargeBatches(power)));
+            int serial = combat.GetTotalCardPlayStartSerial(context.Simulator);
+            int tracked = state.Batches.Sum(batch => batch.Bonus);
+            if (state.Batches.Count == 0 || tracked < power.Amount)
+                return power.Amount;
+            return state.Batches.Where(batch => batch.EligibleSerial <= serial)
+                .Sum(batch => batch.Bonus);
+        }
         return AdditiveRegistry.TryInvokeRegistered(listener, context, out var result)
             ? result.Value
             : InvokeOriginalAdditive(listener, context);

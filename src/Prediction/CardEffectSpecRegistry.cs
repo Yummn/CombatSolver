@@ -139,6 +139,7 @@ internal static class CardEffectSpecRegistry
         Creature ownerCreature = playedCard.Preview.Owner.Creature;
         bool applied = false;
         if (!(card is Rebound && BetterDefectMobileCompatibility.IsTransformed<Rebound>())
+            && !(card is Hyperbeam && BetterDefectMobileCompatibility.IsTransformed<Hyperbeam>())
             && PowerEffects.TryGetValue(card.GetType(), out CardPowerEffect[]? effects))
         {
             applied = true;
@@ -186,6 +187,14 @@ internal static class CardEffectSpecRegistry
                 if (simulator.HasPendingChoice)
                     return true;
             }
+        }
+
+        if (card is Hyperbeam && BetterDefectMobileCompatibility.IsTransformed<Hyperbeam>())
+        {
+            BetterDefectMobileCompatibility.ApplyReviewedTemporaryPower(combat,
+                "BetterDefect.Cards.BdHyperbeamTemporaryFocusDownPower", card,
+                card.DynamicVars["FocusPower"].IntValue, focus: true, positive: false);
+            applied = true;
         }
 
         if (card is ChargeBattery && BetterDefectMobileCompatibility.IsTransformed<ChargeBattery>())
