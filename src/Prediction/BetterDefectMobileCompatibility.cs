@@ -40,11 +40,7 @@ internal static class BetterDefectMobileCompatibility
         typeof(RocketPunch), typeof(Shatter),
         typeof(Sunder), typeof(SweepingBeam), typeof(Synchronize), typeof(Tempest),
         typeof(TeslaCoil), typeof(TrashToTreasure), typeof(Voltaic),
-#if COMBAT_SOLVER_MOBILE_TEST
-        // Candidate mirrors are not admitted in release until an Android
-        // v0.111.0 actual/simulated differential covers the selection path.
         typeof(AllForOne), typeof(Rebound),
-#endif
     ];
     private static readonly HashSet<Type> PotentialCardGenerators =
     [
