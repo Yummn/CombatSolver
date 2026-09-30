@@ -7,6 +7,7 @@
 - 原先缺失的 14 张 `Bd*` 自定义卡：13 项首轮零未镜像通过；`BdBullseye` 的单独夹具在进程启动前未产结果，随后改造/未改造完整自动出牌均通过。原先已支持的 9 张合计为 23 张有明确镜像入口。
 - 真实自动出牌夹具覆盖 `BD_FISSION+`（2 电球）、`BD_ELECTRODYNAMICS`、`BD_BULLSEYE`（改造/未改造）、`BD_REPROGRAM+`（3 电球）、`SYNTHESIS+`、`SKIM`、`BD_DOOM_AND_GLOOM`、`HAILSTORM`、`WHITE_NOISE`、`SPINNER+`、`BD_MELTER`（改造/未改造，怪物有 10 格挡及 Hand Drill），及此前的 `BD_CORE_SURGE` / `RIP_AND_TEAR`；测试结果为 `Passed`，对应战斗日志 `REPLAN_SUMMARY state_mismatch=0`。只证明这些输入下的搜索、原生部署和状态核对；不等于 79 张全部升级/附魔/多模组组合完成差分。
 - `WHITE_NOISE` 原来把已建模的三选一仍标记 `UnresolvedPlayerChoice`，使保护性部署拒绝；`SPINNER` 原来把只安装玻璃球原生回调的 Power 误报未镜像。两项均先取得失败结果，修复后实战通过。`BdMelter` 的破盾事件现在走统一 `AfterBlockBroken` 镜像，并由带格挡/遗物场景覆盖。
+- 追加 15 项此前未做整战的定向全自动出牌：`ADAPTIVE_STRIKE`、改造 `BD_CORE_SURGE`、`BD_FORCE_FIELD`、`BD_STEAM_BARRIER`、`BD_THUNDER_STRIKE`、`BEAM_CELL`、`BULK_UP`、`ICE_LANCE`、`MOMENTUM_STRIKE`、`REFRACT`；未改造 `BD_AGGREGATE`、`BD_BLIZZARD`、`BD_REPROGRAM`、`BD_REWORKED_BIASED_COGNITION`、`BD_SELF_REPAIR`。最终 15/15 `Passed` 且各自 `REPLAN_SUMMARY state_mismatch=0`。力场先前是夹具进程无结果；汇集与未改造重编程第一次未被求解器选中，不构成出牌验证，调整能量与手牌使其实际出牌后通过。结果位于本机 `.pc-v111-bd-compat-test/betterdefect-uncovered-fullauto-results.json` 和 `betterdefect-uncovered-retest-results.json`。
 - `docs/mobile-betterdefect-card-coverage-audit-20260930.md` 列出证据边界与尚未在手机验证的项；本节覆盖历史 PC v0.107.1 无法测试的技术限制，但不倒改当时的历史证据。
 
 ## 手机内存条口径（2026-09-30）
