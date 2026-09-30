@@ -38,12 +38,16 @@ internal sealed partial class SolverActionBar : VBoxContainer
         actionRow.AddThemeConstantOverride("separation", SolverUiTokens.Spacing.Md);
         _actions.AddChild(fullAuto);
         _actions.AddChild(adopt);
-        _actions.AddChild(freeze);
-        _actions.AddChild(execute);
+        if (!MobilePortPolicy.IsMobile)
+        {
+            _actions.AddChild(freeze);
+            _actions.AddChild(execute);
+        }
         _actions.AddChild(recalculate);
         _actions.AddChild(stop);
         actionRow.AddChild(_actions);
-        actionRow.AddChild(autoStart);
+        if (!MobilePortPolicy.IsMobile)
+            actionRow.AddChild(autoStart);
         AddChild(actionRow);
         _memoryRow = new HBoxContainer { Name = "MemoryRow", MouseFilter = MouseFilterEnum.Pass };
         _memoryRow.AddThemeConstantOverride("separation", SolverUiTokens.Spacing.Sm);
@@ -55,6 +59,16 @@ internal sealed partial class SolverActionBar : VBoxContainer
 
     public void Refresh(SolverActionBarState state)
     {
+        if (MobilePortPolicy.IsMobile)
+        {
+            _recalculate.Visible = !state.Searching;
+            _stop.Visible = state.Searching;
+            _adopt.Visible = state.ShowAdopt;
+            _fullAuto.Visible = true;
+            _memoryRow.Visible = !state.Collapsed;
+            _memory.Visible = !state.Collapsed;
+            return;
+        }
         _recalculate.Visible = !state.Searching;
         _stop.Visible = state.Searching;
         _adopt.Visible = state.ShowAdopt;
@@ -68,6 +82,16 @@ internal sealed partial class SolverActionBar : VBoxContainer
 
     internal void AssertLayoutForTesting()
     {
+        if (MobilePortPolicy.IsMobile)
+        {
+            Refresh(new SolverActionBarState(true, false, false, false));
+            if (!_fullAuto.Visible || _fullAuto.GetParent() != _actions
+                || _execute.GetParent() != null || _freeze.GetParent() != null
+                || _autoStart.GetParent() != null || _memoryRow.Visible
+                || _fullAuto.CustomMinimumSize.X < 64f || _fullAuto.CustomMinimumSize.Y < 64f)
+                throw new InvalidOperationException("Mobile action bar contains removed controls.");
+            return;
+        }
         bool originalAdoptDisabled = _adopt.Disabled;
         bool originalExecuteDisabled = _execute.Disabled;
         try

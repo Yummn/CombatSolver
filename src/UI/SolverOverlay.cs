@@ -1488,8 +1488,17 @@ internal static class SolverOverlay
             _renderedExecuteButtonStyle = executeStyle;
         }
 
-        _fullAutoButton.Text = SolverText.Get(SolverController.FullAutoEnabled ? "全自动：开" : "全自动：关");
+        _fullAutoButton.Text = MobilePortPolicy.IsMobile
+            ? SolverController.FullAutoEnabled ? "■" : "▶"
+            : SolverText.Get(SolverController.FullAutoEnabled ? "全自动：开" : "全自动：关");
         SolverUiTokens.ApplyButtonStyle(_fullAutoButton, SolverController.FullAutoEnabled ? SolverButtonStyle.Positive : SolverButtonStyle.Secondary);
+        if (MobilePortPolicy.IsMobile)
+        {
+            _fullAutoButton.AddThemeFontSizeOverride("font_size", 34);
+            _fullAutoButton.TooltipText = SolverText.Get(SolverController.FullAutoEnabled
+                ? "停止全自动；下次进入战斗也保持关闭。"
+                : "开始全自动；开启后跨房间保持。再次点击停止。");
+        }
         _fullAutoButton.Disabled = solverDisabled || adoptingRoute;
         if (_autoEnableFullAutoSwitch != null)
             _autoEnableFullAutoSwitch.ButtonPressed = SolverSettings.Current.AutoEnableFullAuto;
@@ -1969,9 +1978,12 @@ internal static class SolverOverlay
         title.SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin;
         header.AddChild(title);
 
-        _solverEnabledButton = CreateHeaderButton(SolverText.Get("求解器：开"), 90);
-        _solverEnabledButton.Pressed += () => SolverController.SetSolverDisabled(!SolverController.SolverDisabled);
-        header.AddChild(_solverEnabledButton);
+        if (!MobilePortPolicy.IsMobile)
+        {
+            _solverEnabledButton = CreateHeaderButton(SolverText.Get("求解器：开"), 90);
+            _solverEnabledButton.Pressed += () => SolverController.SetSolverDisabled(!SolverController.SolverDisabled);
+            header.AddChild(_solverEnabledButton);
+        }
 
         Control spacer = new()
         {
@@ -2048,7 +2060,9 @@ internal static class SolverOverlay
     private static Button CreateHeaderButton(string text, float minimumWidth)
     {
         Button button = SolverUiTokens.CreateButton(text, SolverButtonStyle.Secondary);
-        button.CustomMinimumSize = new Vector2(minimumWidth, SolverUiTokens.Size.ButtonHeight);
+        button.CustomMinimumSize = new Vector2(
+            MobilePortPolicy.IsMobile ? Math.Max(68f, minimumWidth) : minimumWidth,
+            SolverUiTokens.Size.ButtonHeight);
         button.ApplyLocaleFontSubstitution(FontType.Bold, "font");
         return button;
     }
@@ -2309,8 +2323,13 @@ internal static class SolverOverlay
         _executeButton.Pressed += OnExecutePressed;
 
         _fullAutoButton = SolverUiTokens.CreateButton(SolverText.Get("全自动：关"), SolverButtonStyle.Secondary);
-        _fullAutoButton.CustomMinimumSize = new Vector2(144, SolverUiTokens.Size.ButtonHeight);
-        _fullAutoButton.TooltipText = SolverText.Get("控制本场自动续打。关闭后，正在执行的动作按原流程完成。");
+        _fullAutoButton.CustomMinimumSize = MobilePortPolicy.IsMobile
+            ? new Vector2(84, 72) : new Vector2(144, SolverUiTokens.Size.ButtonHeight);
+        _fullAutoButton.TooltipText = SolverText.Get(MobilePortPolicy.IsMobile
+            ? "开始全自动；开启后跨房间保持。再次点击停止。"
+            : "控制本场自动续打。关闭后，正在执行的动作按原流程完成。");
+        if (MobilePortPolicy.IsMobile)
+            _fullAutoButton.AddThemeFontSizeOverride("font_size", 34);
         _fullAutoButton.Pressed += OnFullAutoPressed;
 
         HBoxContainer autoStart = new()
@@ -3421,6 +3440,13 @@ internal static class SolverOverlay
             ShowManualCalculationReady(host, false);
             _actionBar!.AssertLayoutForTesting();
             RefreshControls();
+            if (MobilePortPolicy.IsMobile)
+            {
+                if (_solverEnabledButton != null || SolverController.SolverDisabled
+                    || _fullAutoButton?.GetParent() == null)
+                    throw new InvalidOperationException("Mobile solver action bar retained hidden desktop controls.");
+                return;
+            }
             if (_solverEnabledButton!.GetParent().Name != "Header"
                 || !ManualSystemMemoryReleaseButtonConfiguredForTesting
                 || _theftPolicyControls!.GetParent() != _body)

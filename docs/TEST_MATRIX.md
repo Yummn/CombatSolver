@@ -1,5 +1,11 @@
 # CombatSolver 测试清单
 
+## 手机 v0.111.0 界面简化（2026-09-30）
+
+- Android v0.111.0 Release 编译通过（0 警告、0 错误）；`verify-refactor-boundaries.ps1` 通过（`search_files=213`），`git diff --check` 通过。以上不等于真机观感或交互验收。
+- 静态布局合同：手机操作栏不挂载冻结路线、执行本回合和下场自动开启控件；主图标按钮至少 64×64，标题栏不挂载求解器开关。`UI-PRIORITY-FEEDBACK` 手机分支断言已加入，待真机或移动端无头夹具运行。
+- 实机观感、点击、全自动跨房间保留、关闭后不自动计算：当前 ADB 未连接，未验收。
+
 ## Android v0.111.0 持有 PowerPotion 的回合准备（2026-09-30）
 
 - 失败基线：真机 `godot.log` 记录 `PowerPotion 可能生成尚未适配的卡牌` 从根捕获逸出，并出现两次 `Combat turn loop died`；面板未出现。

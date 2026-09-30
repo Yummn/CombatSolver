@@ -102,7 +102,7 @@ public static class Entry
                 Logger.Info($"[CombatSolver/Mobile] INIT mod={version.ToString(3)} auto_search={SolverSettings.Current.AutomaticCalculationEnabled} full_auto_available=true search_ms={SolverSettings.Capture().Profile.SoftTimeBudgetMilliseconds} beam={SolverSettings.Capture().Profile.BeamWidth} max_nodes={SolverSettings.Capture().Profile.MaxExpandedNodes} parallelism=1 no_gc=false desktop_worker=false");
             Logger.Info("[CombatSolver/Test] ENGINE embedded=true rf_dependency=false incremental_search=true");
             Logger.Info(MobilePortPolicy.IsMobile
-                ? "战斗路线求解器手机移植已启用。默认手动计算，可在设置中开启自动计算，或在面板中执行路线与全自动。"
+                ? "战斗路线求解器手机移植已启用。点击面板的开始图标开启跨房间全自动；关闭后可手动重新计算。"
                 : "战斗路线求解器已启用。每个玩家新回合会自动后台搜索，也可在面板中执行当前回合路线或开启全自动。");
             NGame? host = NGame.Instance;
             if (host != null)

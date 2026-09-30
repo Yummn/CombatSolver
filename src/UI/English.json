@@ -60,6 +60,8 @@
   "当前没有可执行的回合，请等待计算或完成当前选牌。": "No executable turn is available. Wait for a result or finish the current choice.",
   "结束搜索并采用屏幕当前路线；已开启的全自动或排队执行仍按原设置继续。": "Finish searching and adopt the displayed route. Existing auto-play or queued execution continues as configured.",
   "控制本场自动续打。关闭后，正在执行的动作按原流程完成。": "Control automatic play for this combat. Turning this off lets actions already executing finish normally.",
+  "开始全自动；开启后跨房间保持。再次点击停止。": "Start auto-play. It stays enabled across rooms. Tap again to stop.",
+  "停止全自动；下次进入战斗也保持关闭。": "Stop auto-play. It remains off in the next combat.",
   "自动选牌未完成，已暂停执行。当前选择交还手动操作，完成后点击“重新计算”。": "Automatic selection could not finish. Execution is paused and the choice is yours to complete. Then click Recalculate.",
   "求解器：开": "Solver: On",
   "求解器：关": "Solver: Off",

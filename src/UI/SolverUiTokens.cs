@@ -15,7 +15,7 @@ internal static class SolverUiTokens
 {
     private static SolverOverlayTheme _activeTheme = SolverOverlayTheme.Dark;
 
-    public static bool IsLightTheme => _activeTheme == SolverOverlayTheme.Light;
+    public static bool IsLightTheme => !MobilePortPolicy.IsMobile && _activeTheme == SolverOverlayTheme.Light;
 
     public static void ConfigureTheme(SolverOverlayTheme theme)
         => _activeTheme = theme;
@@ -66,31 +66,31 @@ internal static class SolverUiTokens
 
     public static class Type
     {
-        public static int Title => MobilePortPolicy.IsMobile ? 22 : 16;
-        public static int Metric => MobilePortPolicy.IsMobile ? 19 : 15;
-        public static int Body => MobilePortPolicy.IsMobile ? 18 : 14;
-        public static int Caption => MobilePortPolicy.IsMobile ? 16 : 13;
+        public static int Title => MobilePortPolicy.IsMobile ? 26 : 16;
+        public static int Metric => MobilePortPolicy.IsMobile ? 22 : 15;
+        public static int Body => MobilePortPolicy.IsMobile ? 20 : 14;
+        public static int Caption => MobilePortPolicy.IsMobile ? 18 : 13;
         public const int Outline = 0;
     }
 
     public static class Size
     {
         public const float PanelMargin = 24f;
-        public const float ExpandedMaxWidth = 820f;
-        public const float ExpandedMaxHeight = 440f;
+        public static float ExpandedMaxWidth => MobilePortPolicy.IsMobile ? 1040f : 820f;
+        public static float ExpandedMaxHeight => MobilePortPolicy.IsMobile ? 620f : 440f;
         public const float ExpandedMinWidth = 560f;
-        public const float CollapsedWidth = 520f;
-        public const float CollapsedHeight = 120f;
-        public const float RouteViewportHeight = 148f;
+        public static float CollapsedWidth => MobilePortPolicy.IsMobile ? 760f : 520f;
+        public static float CollapsedHeight => MobilePortPolicy.IsMobile ? 190f : 120f;
+        public static float RouteViewportHeight => MobilePortPolicy.IsMobile ? 200f : 148f;
         public const float RouteViewportHeightWithDetails = 96f;
-        public const float RouteRowHeight = 44f;
-        public const float ActionPillHeight = 28f;
+        public static float RouteRowHeight => MobilePortPolicy.IsMobile ? 54f : 44f;
+        public static float ActionPillHeight => MobilePortPolicy.IsMobile ? 36f : 28f;
         public const float TurnColumnWidth = 88f;
         public const float OutcomeColumnWidth = 238f;
         public const float MetricsDamageWidth = 92f;
         public const float MetricsHpWidth = 64f;
         public const float MetricsEnergyWidth = 52f;
-        public static float ButtonHeight => MobilePortPolicy.IsMobile ? 48f : 34f;
+        public static float ButtonHeight => MobilePortPolicy.IsMobile ? 64f : 34f;
         public const float ResizeEdgeThickness = 8f;
         public const int ResizeGripSize = 20;
     }
@@ -147,8 +147,8 @@ internal static class SolverUiTokens
                     "191c22fa" => "39291ef7",
                     "23272ffb" => "4b3626fa",
                     "2b3039ff" => "62452dfb",
-                    "3a404aeb" => "b5854cff",
-                    "2a2f38cc" => "8b6945ee",
+                    "3a404aeb" => "24150bff",
+                    "2a2f38cc" => "392316ff",
                     "5c9fc7ff" => "e3b553ff",
                     "73b4d8ff" => "f4cb76ff",
                     "eef1f6ff" => "fff1d9ff",
@@ -175,7 +175,7 @@ internal static class SolverUiTokens
         bool shadow = false)
     {
         if (MobilePortPolicy.IsMobile)
-            borderWidth = Math.Max(2, borderWidth);
+            borderWidth = Math.Max(4, borderWidth);
         return new StyleBoxFlat
         {
             BgColor = background,
@@ -269,6 +269,28 @@ internal static class SolverUiTokens
 
     public static void ApplyButtonStyle(Button button, SolverButtonStyle style)
     {
+        if (MobilePortPolicy.IsMobile)
+        {
+            (Color fill, Color mobileHover, Color mobilePressed) = style switch
+            {
+                SolverButtonStyle.Primary => (Color.FromHtml("a86b31"), Color.FromHtml("c48a45"), Color.FromHtml("865024")),
+                SolverButtonStyle.Positive => (Color.FromHtml("628347"), Color.FromHtml("7b9d58"), Color.FromHtml("496436")),
+                SolverButtonStyle.Danger => (Color.FromHtml("a34f39"), Color.FromHtml("c56548"), Color.FromHtml("813a2b")),
+                _ => (Color.FromHtml("765334"), Color.FromHtml("906944"), Color.FromHtml("5d402b")),
+            };
+            Color ink = Color.FromHtml("21140c");
+            button.AddThemeStyleboxOverride("normal", CreateBox(fill, ink, 10, 16, 8, 4, shadow: true));
+            button.AddThemeStyleboxOverride("hover", CreateBox(mobileHover, ink, 10, 16, 8, 4, shadow: true));
+            button.AddThemeStyleboxOverride("pressed", CreateBox(mobilePressed, ink, 8, 16, 8, 4));
+            button.AddThemeStyleboxOverride("disabled", CreateBox(Color.FromHtml("514334"), ink, 10, 16, 8, 4));
+            button.AddThemeStyleboxOverride("focus", CreateBox(mobileHover, Palette.Accent, 10, 16, 8, 4));
+            button.AddThemeColorOverride("font_color", Color.FromHtml("fff0d0"));
+            button.AddThemeColorOverride("font_hover_color", Godot.Colors.White);
+            button.AddThemeColorOverride("font_pressed_color", Color.FromHtml("fff0d0"));
+            button.AddThemeColorOverride("font_disabled_color", Color.FromHtml("b7a58d"));
+            ApplyButtonFont(button);
+            return;
+        }
         const int radius = Radius.Medium;
         const int hPad = Spacing.Sm;
         const int vPad = Spacing.Xs;

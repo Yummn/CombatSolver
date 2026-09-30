@@ -130,7 +130,8 @@ internal static partial class SolverController
     public static bool RouteFrozen => _combat.RouteFrozen;
     public static bool HasRetainedRoute => _combat.LatestResult != null || _combat.ContinuationSource != null;
     public static bool AutomaticSearchPaused => _combat.AutomaticSearchPaused;
-    public static bool AutomaticCalculationEnabled => SolverSettings.Current.AutomaticCalculationEnabled;
+    public static bool AutomaticCalculationEnabled => MobilePortPolicy.IsMobile
+        ? _combat.FullAutoEnabled : SolverSettings.Current.AutomaticCalculationEnabled;
     internal static bool ShouldAutomaticallySearchNextTurn
         => FullAutoEnabled || AutomaticCalculationEnabled && !_combat.RouteFrozen;
 
@@ -1481,11 +1482,17 @@ internal static partial class SolverController
         RequestSearch(host, state, SearchReason.Deploy, deployWhenReady: true);
     }
 
-    public static void SetFullAuto(NGame host, CombatState state, bool enabled)
+    public static void SetFullAuto(NGame host, CombatState state, bool enabled, bool persistPreference = true)
     {
         AssertMainThread();
         if (enabled && RejectUnsupportedMobileMod(host, state))
             return;
+        if (MobilePortPolicy.IsMobile && persistPreference)
+            SolverSettings.Update(SolverSettings.Current with
+            {
+                AutoEnableFullAuto = enabled,
+                AutomaticCalculationEnabled = enabled,
+            });
         SolverDispatcher.Ensure(host);
         if (!enabled)
         {
@@ -1624,6 +1631,8 @@ internal static partial class SolverController
     public static void SetSolverDisabled(bool disabled, bool persist = true)
     {
         AssertMainThread();
+        if (MobilePortPolicy.IsMobile)
+            disabled = false;
         _solverDisabled = disabled;
         RunStatistics.SettingsChanged();
         if (persist)

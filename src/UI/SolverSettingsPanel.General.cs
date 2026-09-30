@@ -180,16 +180,20 @@ internal sealed partial class SolverSettingsPanel
         GridContainer solverGrid = CreateSettingsGrid();
         _solverEnabled = CreateToggle();
         _solverEnabled.Toggled += OnSolverEnabledToggled;
-        AddBasicRow(solverGrid, SolverText.Get("启用求解器"), _solverEnabled);
+        if (!MobilePortPolicy.IsMobile)
+            AddBasicRow(solverGrid, SolverText.Get("启用求解器"), _solverEnabled);
         _automaticCalculation = CreateToggle();
         _automaticCalculation.Toggled += OnAutomaticCalculationToggled;
-        AddBasicRow(
-            solverGrid,
-            SolverText.Get("自动计算"),
-            _automaticCalculation,
-            SolverText.Get("开启后会在进入战斗局面和每个玩家回合自动开始后台计算；关闭后由主面板手动开始计算。"));
-        AddSettingsSection(content, SolverText.Get("开始计算"),
-            SolverText.Get("控制求解器启停与自动计算。自动开启全自动可在主界面右侧设置。"), solverGrid);
+        if (!MobilePortPolicy.IsMobile)
+        {
+            AddBasicRow(
+                solverGrid,
+                SolverText.Get("自动计算"),
+                _automaticCalculation,
+                SolverText.Get("开启后会在进入战斗局面和每个玩家回合自动开始后台计算；关闭后由主面板手动开始计算。"));
+            AddSettingsSection(content, SolverText.Get("开始计算"),
+                SolverText.Get("控制求解器启停与自动计算。自动开启全自动可在主界面右侧设置。"), solverGrid);
+        }
 
         GridContainer bossStrategyGrid = CreateSettingsGrid();
         _actTransitionBossHpStrategy = CreateBossHpStrategyInput(
@@ -212,7 +216,8 @@ internal sealed partial class SolverSettingsPanel
         GridContainer executionGrid = CreateSettingsGrid();
         _stopOnCombatEnd = CreateToggle();
         _stopOnCombatEnd.Toggled += OnStopOnCombatEndToggled;
-        AddBasicRow(executionGrid, SolverText.Get("预计结束战斗时暂停"), _stopOnCombatEnd);
+        if (!MobilePortPolicy.IsMobile)
+            AddBasicRow(executionGrid, SolverText.Get("预计结束战斗时暂停"), _stopOnCombatEnd);
         _stopOnDeathTurn = CreateToggle();
         _stopOnDeathTurn.Toggled += OnStopOnDeathTurnToggled;
         AddBasicRow(executionGrid, SolverText.Get("死亡回合时暂停"), _stopOnDeathTurn);
@@ -248,11 +253,12 @@ internal sealed partial class SolverSettingsPanel
 
         GridContainer interfaceGrid = CreateSettingsGrid();
         _overlayTheme = CreateOverlayThemeInput();
-        AddBasicRow(
-            interfaceGrid,
-            SolverText.Get("界面主题"),
-            _overlayTheme,
-            SolverText.Get("深色为默认主题；切换后会重建当前覆盖层，并保留最近的路线与设置页面。"));
+        if (!MobilePortPolicy.IsMobile)
+            AddBasicRow(
+                interfaceGrid,
+                SolverText.Get("界面主题"),
+                _overlayTheme,
+                SolverText.Get("深色为默认主题；切换后会重建当前覆盖层，并保留最近的路线与设置页面。"));
         AddBasicRow(
             interfaceGrid,
             SolverText.Get("覆盖层透明度"),

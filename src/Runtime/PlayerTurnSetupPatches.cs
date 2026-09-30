@@ -796,7 +796,7 @@ internal static class PlayerTurnSetupCoordinator
             SearchCompletionNotifier.Notify(SearchCompletionNotificationKind.Failed);
             if (NGame.Instance is { } gameHost)
             {
-                SolverController.SetFullAuto(gameHost, combat, false);
+                SolverController.SetFullAuto(gameHost, combat, false, persistPreference: false);
                 SolverOverlay.ShowBlockingError(gameHost,
                     SolverController.FormatSearchSetupFailure(incompatible));
             }

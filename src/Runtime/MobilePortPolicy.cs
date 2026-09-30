@@ -47,6 +47,10 @@ internal static class MobilePortPolicy
         SolverSearchProfile profile = SolverSettings.ResolvePerformanceValues(data).Profile;
         return data with
         {
+            SolverDisabled = false,
+            AutomaticCalculationEnabled = data.AutoEnableFullAuto,
+            StopFullAutoOnCombatEnd = false,
+            OverlayTheme = SolverOverlayTheme.Dark,
             PerformancePreset = SolverPerformancePreset.Custom,
             SearchMaxDegreeOfParallelism = 1,
             SearchTimeLimitSeconds = Math.Clamp(profile.SoftTimeBudgetMilliseconds / 1000d, 1d, 30d),
