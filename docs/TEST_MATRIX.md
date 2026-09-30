@@ -1,5 +1,10 @@
 # CombatSolver 测试清单
 
+## BetterDefect 散热片补充镜像（2026-09-30）
+
+- 截图根因：`BdHeatsinks` 不在原创新卡镜像名单，`ValidateCard` 在搜索前显式拒绝。源码补充卡牌施加能力和能力牌后抽牌镜像。
+- Android v0.111.0 Release 构建与结构门禁；真机 `BdHeatsinks`／`BdHeatsinks+` 逐状态差分、打出另一张能力牌后的抽牌数量及完整卡组搜索尚未执行（ADB 未连接），不得标为 Passed。
+
 ## BetterDefect 当前 59 张改造适配（2026-09-29）
 
 - 手机 v0.111.0：原 37 张与本批 22 张全部具备镜像／捕获数据通道；22 张各有隔离 BetterDefect + CombatSolver + RitsuLib 真机 actual-vs-predicted 基本夹具通过，另外验证升级骚动、创造性 AI／你好世界回合开始选牌。59 项改造保存档的短搜夹具通过零未镜像类型、真实出牌、第二回合续用及零意外重算。详见 `mobile-betterdefect-59-adaptation.md` 和 `.port-build/mobile-betterdefect-compat-20260928/bd59-*-result.json`。

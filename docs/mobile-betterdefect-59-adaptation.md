@@ -36,6 +36,10 @@ The non-test Android Release DLL was installed after the fixture listener and re
 
 This acceptance is deliberately narrower than exhaustive gameplay: mixed-mod startup/search, every card upgrade/enchantment interaction, generated BetterDefect cards outside the reviewed set, all relics and enemies, and every multiple-stack/multiple-hit timing remain unverified. Unknown card/power effects fail closed. Do not describe this as universal BetterDefect compatibility.
 
+## Additional original card: BdHeatsinks (2026-09-30)
+
+A player screenshot showed the solver refusing to start because the deck contains the original BetterDefect `BdHeatsinks` card. The 59 transformation count did not include every original BetterDefect card. The adapter now mirrors `BdHeatsinks` applying `BdHeatsinksPower` with its native `Draw` base value and mirrors that power drawing its stack amount after its owner plays a Power card. This addresses the reported explicit refusal; other original BetterDefect cards remain fail-closed until their effects are reviewed. The Android v0.111.0 Release build passes, but Android actual-versus-predicted combat verification is pending because no ADB device was connected for this change. Do not count this as a passed battle test.
+
 ## Test-install hygiene
 
 The Android unattended request listener is compiled only with `CombatSolverMobileTest=true`; normal mobile builds omit it. Never publish or leave a test build on the player's phone. Restore the pre-test phone backup and saved mod profile after each test round.

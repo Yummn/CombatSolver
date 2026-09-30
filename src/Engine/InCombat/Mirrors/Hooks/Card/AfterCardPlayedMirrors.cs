@@ -39,6 +39,16 @@ internal static class AfterCardPlayedMirrors
     public static void Invoke(AbstractModel listener, AfterCardPlayedMirrorContext context)
     {
         using var dispatch = context.Simulator.BeginExecutionDispatch();
+        if (listener is PowerModel heatsinks
+            && BetterDefectMobileCompatibility.IsMirroredPower(heatsinks)
+            && heatsinks.GetType().FullName == "BetterDefect.Cards.BdHeatsinksPower")
+        {
+            if (context.PreviewCard.Owner.Creature == heatsinks.Owner
+                && context.PreviewCard.Type == CardType.Power
+                && heatsinks.Owner.Player is { } player)
+                context.Simulator.Draw(player, heatsinks.Amount);
+            return;
+        }
         if (listener is PowerModel power
             && BetterDefectMobileCompatibility.IsMirroredPower(power)
             && power.GetType().FullName == "BetterDefect.Cards.BdStaticDischargeChargePower")

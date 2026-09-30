@@ -40,6 +40,7 @@ internal static class BetterDefectMobileCompatibility
         "BetterDefect.Cards.BdRecursion",
         "BetterDefect.Cards.BdRecycle",
         "BetterDefect.Cards.BdStaticDischarge",
+        "BetterDefect.Cards.BdHeatsinks",
     };
     private static readonly HashSet<string> MirroredTemporaryPowers = new(StringComparer.Ordinal)
     {
@@ -54,6 +55,7 @@ internal static class BetterDefectMobileCompatibility
         "BetterDefect.Cards.BdStaticDischargePower",
         "BetterDefect.Cards.BdStormChargePower",
         "BetterDefect.Cards.BdStaticDischargeChargePower",
+        "BetterDefect.Cards.BdHeatsinksPower",
     };
     // These exact v0.11.66 transformations have explicit branch mirrors below,
     // or only change model data already read from the captured card. Do not add
@@ -393,6 +395,16 @@ internal static class BetterDefectMobileCompatibility
             return false;
         switch (card.Preview.GetType().FullName)
         {
+            case "BetterDefect.Cards.BdHeatsinks":
+            {
+                if (simulator.State.CombatState is not SimulatedCombatState combat)
+                    throw Unsupported("散热器缺少分支战斗状态");
+                var owner = card.Preview.Owner.Creature;
+                combat.ApplyPower(ReviewedPowerType("BetterDefect.Cards.BdHeatsinksPower"),
+                    owner, checked((int)card.MutablePreview.DynamicVars["Draw"].BaseValue), owner);
+                result = new(MirrorDispatchKind.Handled);
+                return true;
+            }
             case "BetterDefect.Cards.BdRecycle":
                 // The hand selection and post-selection energy gain are owned by
                 // CardChoiceSupport/CardChoiceResolution, not by this OnPlay.
