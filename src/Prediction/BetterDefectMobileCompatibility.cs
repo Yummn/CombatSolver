@@ -123,6 +123,12 @@ internal static class BetterDefectMobileCompatibility
     internal static bool HasReviewedMobileMod =>
         MobilePortPolicy.IsMobile && Volatile.Read(ref _activeAssembly) is not null;
 
+    // A held card-generating potion is harmless until used. Keep it out of
+    // prediction rather than aborting turn setup merely because it occupies a slot.
+    internal static bool MayGenerateUnmirroredCard(PotionModel potion)
+        => potion is AttackPotion or SkillPotion or PowerPotion or OrobicAcid
+            or ColorlessPotion or CosmicConcoction;
+
     internal static bool IsTransformed<TCard>() where TCard : CardModel
         => MobilePortPolicy.IsMobile && Volatile.Read(ref _activeAssembly) is not null
             && Volatile.Read(ref _transformedTypes).Contains(typeof(TCard));
@@ -280,10 +286,6 @@ internal static class BetterDefectMobileCompatibility
             foreach (var orb in player.PlayerCombatState?.OrbQueue.Orbs ?? [])
                 if (orb.GetType().Assembly == assembly)
                     Reject($"充能球 {orb.GetType().Name} 尚未适配");
-            foreach (var potion in player.Potions)
-                if (potion is AttackPotion or SkillPotion or PowerPotion or OrobicAcid
-                    or ColorlessPotion or CosmicConcoction)
-                    Reject($"药水 {potion.GetType().Name} 可能生成尚未适配的卡牌");
         }
         foreach (var power in combat.Creatures.SelectMany(creature => creature.Powers))
         {

@@ -1,5 +1,10 @@
 # CombatSolver 测试清单
 
+## Android v0.111.0 持有 PowerPotion 的回合准备（2026-09-30）
+
+- 失败基线：真机 `godot.log` 记录 `PowerPotion 可能生成尚未适配的卡牌` 从根捕获逸出，并出现两次 `Combat turn loop died`；面板未出现。
+- 修复后真机复测：原存档携带药水进入 `AXEBOTS_NORMAL`，`TURN_SETUP_ROOT_CAPTURE turn=1` 与主搜索根捕获通过，搜索完成 `expanded=612`、预计用药 0，界面显示路线与操作按钮，`godot.log` 未再出现 `turn loop died`。六类产牌药水的候选排除由源码入口检查与搜索 `CanSearch` 两层保证；这次未实际使用药水，也未测试另一个未适配 Mod 的回退界面分支。
+
 ## BetterDefect 散热片补充镜像（2026-09-30）
 
 - 截图根因：`BdHeatsinks` 不在原创新卡镜像名单，`ValidateCard` 在搜索前显式拒绝。源码补充卡牌施加能力和能力牌后抽牌镜像。

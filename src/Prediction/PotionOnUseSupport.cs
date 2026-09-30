@@ -16,7 +16,9 @@ namespace CombatSolver;
 internal static class PotionOnUseSupport
 {
     public static bool CanSearch(PotionModel potion)
-        => potion is AttackPotion
+        => !(BetterDefectMobileCompatibility.HasReviewedMobileMod
+                && BetterDefectMobileCompatibility.MayGenerateUnmirroredCard(potion))
+            && (potion is AttackPotion
             or SkillPotion
             or PowerPotion
             or ColorlessPotion
@@ -69,7 +71,7 @@ internal static class PotionOnUseSupport
             or TouchOfInsanity
             or VulnerablePotion
             or WeakPotion
-            || PotionOnUseMirrors.CanMirror(potion);
+            || PotionOnUseMirrors.CanMirror(potion));
 
     public static bool Use(
         CombatPredictionSimulator simulator,

@@ -791,6 +791,20 @@ internal static class PlayerTurnSetupCoordinator
                 rootSnapshot,
                 SolvedRouteCache.Capture(combat, rootSnapshot, searchPolicy, battleDamage));
         }
+        catch (IncompatibleGameplayModException incompatible)
+        {
+            SearchCompletionNotifier.Notify(SearchCompletionNotificationKind.Failed);
+            if (NGame.Instance is { } gameHost)
+            {
+                SolverController.SetFullAuto(gameHost, combat, false);
+                SolverOverlay.ShowBlockingError(gameHost,
+                    SolverController.FormatSearchSetupFailure(incompatible));
+            }
+            Entry.Logger.Warn($"[CombatSolver/Mobile] TURN_SETUP_SEARCH_REJECT " +
+                $"mod={incompatible.ModId} reason={incompatible.Subject} native_setup=true");
+            await InvokeOriginalSetupAsync(manager, turnState, player, choiceContext);
+            return;
+        }
         catch
         {
             SearchCompletionNotifier.Notify(SearchCompletionNotificationKind.Failed);

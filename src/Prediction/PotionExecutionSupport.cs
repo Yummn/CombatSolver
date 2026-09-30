@@ -11,6 +11,8 @@ internal static class PotionExecutionSupport
     internal static bool Prepare(CombatPredictionSimulator simulator, SimulatedCombatState combat,
         PotionModel potion, int slot, Creature? target)
     {
+        if (!PotionOnUseSupport.CanSearch(potion))
+            return false;
         combat.ConsumePotion(potion.Owner, slot);
         combat.BeforePotionUsed(simulator, potion, target);
         return !combat.HasPendingChoice && PotionOnUseSupport.Use(simulator, combat, potion, target);

@@ -1,5 +1,11 @@
 # CombatSolver 开发笔记与未来构想
 
+## 手机回合准备被产牌药水中断（2026-09-30）
+
+- REDMI K80 Pro 的 v0.111.0 `godot.log` 显示回合准备根快照因持有 `PowerPotion` 触发 BetterDefect 的“可能生成未适配卡牌”拒绝；异常从 `RunSetupAfterRootCaptureBarrierAsync` 逸出，游戏报告 `Combat #1/#2 turn loop died`，求解器面板因此未出现且战斗卡住。持有药水本身不产生卡牌，不应在根捕获时拒绝。
+- 改为将六种可能产出未适配卡牌的药水从该 BetterDefect 组合的预测候选中排除，并在药水执行入口再次拒绝；不改变玩家原生手动用药。回合准备若仍遇到明确未适配模组，显示面板报错并交还原生回合准备，不再让此类异常杀死游戏回合循环。
+- Android v0.111.0 Release 构建及结构门禁通过，已在 REDMI K80 Pro 上覆盖安装并重启游戏。携带原存档进入 `AXEBOTS_NORMAL` 战斗后，面板重新显示，第一回合根捕获通过，求解器返回路线（612 展开、预计战损 0、预计用药 0）；当前日志未再出现 `turn loop died`。截图见 `../.port-build/mobile-betterdefect-compat-20260928/combat-after-patch-settled-20260930.png`。未在该场实际执行路线，亦未验证产牌药水本身的预测效果。
+
 ## BetterDefect 原版散热片适配（2026-09-30）
 
 - 玩家战斗截图显示卡组含 `BdHeatsinks` 时求解器拒绝开始。59 张改造牌的适配不包含全部 BetterDefect 原创新卡。本次按 v0.11.66 源码镜像散热片施加 Power 以及打出能力牌后按层数抽牌；其他未审阅原创新卡继续显式拒绝。
