@@ -1,5 +1,7 @@
 # BetterDefect 59-card mobile adaptation
 
+Full v0.11.66 card-pool and selectable-transformation gap audit: [mobile-betterdefect-card-coverage-audit-20260930.md](mobile-betterdefect-card-coverage-audit-20260930.md). The saved 59-card profile is narrower than all 79 selectable transformations and the 23 custom `Bd*` cards.
+
 Target: Android game v0.111.0, BetterDefect v0.11.66. The phone's persisted encyclopedia state contains 59 enabled transformations. All 59 named transformed types now have an explicit mirror or captured-data-only admission path. This is an adapter for that exact version and selection, not a promise that every BetterDefect original card or every third-party Mod is supported.
 
 ## Current boundary
