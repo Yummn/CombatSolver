@@ -32,6 +32,7 @@ internal sealed class PredictionModHookSubscriberCapture
     public IReadOnlySet<Player> EveryCardFreePlayers { get; }
     public bool HasBaseLibCardModifiers { get; }
     public bool HasInactiveLoadoutSummonPowers { get; }
+    public IReadOnlySet<Type> ReviewedLoserEatDustDeathHookTypes { get; }
     public AdaptedOnPlaySnapshot? AdaptedOnPlay { get; private init; }
     public MirroredHookListenerFilter MirroredHookFilter { get; } = MirroredHookListenerFilter.Capture();
 
@@ -41,7 +42,8 @@ internal sealed class PredictionModHookSubscriberCapture
         IReadOnlyDictionary<Player, int> maxHandSizes,
         IReadOnlySet<Player> everyCardFreePlayers,
         bool hasBaseLibCardModifiers,
-        bool hasInactiveLoadoutSummonPowers)
+        bool hasInactiveLoadoutSummonPowers,
+        IReadOnlySet<Type> reviewedLoserEatDustDeathHookTypes)
     {
         RunSubscribers = runSubscribers;
         CombatSubscribers = combatSubscribers;
@@ -49,6 +51,7 @@ internal sealed class PredictionModHookSubscriberCapture
         EveryCardFreePlayers = everyCardFreePlayers;
         HasBaseLibCardModifiers = hasBaseLibCardModifiers;
         HasInactiveLoadoutSummonPowers = hasInactiveLoadoutSummonPowers;
+        ReviewedLoserEatDustDeathHookTypes = reviewedLoserEatDustDeathHookTypes;
     }
 
     public static PredictionModHookSubscriberCapture Capture(
@@ -64,6 +67,10 @@ internal sealed class PredictionModHookSubscriberCapture
             ValidateSubscriber(subscriber, "run");
         foreach (AbstractModel subscriber in combatSubscribers)
             ValidateSubscriber(subscriber, "combat");
+        HashSet<Type> reviewedDeathHookTypes = runSubscribers.Concat(combatSubscribers)
+            .Where(LoserEatDustMobileCompatibility.IsReviewedDeathHook)
+            .Select(subscriber => subscriber.GetType())
+            .ToHashSet();
         BetterDefectMobileCompatibility.Validate(combat);
         AdaptedOnPlaySnapshot? onPlay = PredictionModPatchAudit.CaptureCardOnPlay(EnumerateAuditableCards(runState, combat));
 
@@ -87,7 +94,8 @@ internal sealed class PredictionModHookSubscriberCapture
             everyCardFreePlayers,
             hasBaseLibCardModifiers,
             combatSubscribers.Any(subscriber =>
-                subscriber.GetType().FullName == LoadoutPowerGiverSummonHookTypeName))
+                subscriber.GetType().FullName == LoadoutPowerGiverSummonHookTypeName),
+            reviewedDeathHookTypes)
             { AdaptedOnPlay = onPlay };
     }
 
@@ -217,6 +225,13 @@ internal sealed class PredictionModHookSubscriberCapture
         if (subscriber is PowerModel reviewedPower
             && BetterDefectMobileCompatibility.IsMirroredPower(reviewedPower))
             return;
+        if (LoserEatDustMobileCompatibility.IsReviewedDeathHook(subscriber))
+        {
+            Entry.Logger.Info(
+                "[CombatSolver/Mobile] LOSER_EAT_DUST_DEATH_HOOK " +
+                "policy=terminal_loss_on_predicted_player_death");
+            return;
+        }
         if (PredictionModModelSupport.IsBaseLibCardModifier(subscriber)
             || KnownPreRootSubscriberTypeNames.Contains(type.FullName ?? string.Empty)
             || (!isBaseGame && mod?.manifest?.affectsGameplay is false))

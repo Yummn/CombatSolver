@@ -2187,6 +2187,9 @@ internal sealed partial class SimulatedCombatState
     internal int RootRunHookListenerCount => _rootRunHookListeners.Length;
     internal int RootRunModSubscriberCount => _modHookSubscribers.RunSubscribers.Length;
     internal int RootCombatModSubscriberCount => _modHookSubscribers.CombatSubscribers.Length;
+
+    internal bool IsReviewedLoserEatDustDeathHook(AbstractModel listener)
+        => _modHookSubscribers.ReviewedLoserEatDustDeathHookTypes.Contains(listener.GetType());
     internal bool RootHasBaseLibCardModifiers => _modHookSubscribers.HasBaseLibCardModifiers;
     internal bool RootMultiplayerScalingIsDetached => _multiplayerScalingModel is null
         || (MultiplayerScalingRunStateField.GetValue(_multiplayerScalingModel) is null

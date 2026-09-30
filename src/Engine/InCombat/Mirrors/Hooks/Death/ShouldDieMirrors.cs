@@ -2,7 +2,9 @@ using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Potions;
 using MegaCrit.Sts2.Core.Models.Relics;
+using CombatSolver.Engine.Common;
 using CombatSolver.Engine.Common.Mirrors;
+using CombatSolver.Engine.InCombat.Simulation;
 
 namespace CombatSolver.Engine.InCombat.Mirrors.Hooks.Death;
 
@@ -29,6 +31,17 @@ internal static class ShouldDieMirrors
 
     public static bool InvokeLate(AbstractModel listener, ShouldDieMirrorContext context)
     {
+        if (context.Simulator.State.CombatState is SimulatedCombatState combat
+            && combat.IsReviewedLoserEatDustDeathHook(listener))
+        {
+            // Native code offers a retry from the room-entry checkpoint. A
+            // prediction branch cannot continue in that replacement combat.
+            // Keep lethal player branches terminal and explicitly risky so
+            // they can never be deployed by mobile full-auto.
+            if (context.Creature.IsPlayer)
+                context.History.RecordRisk(PredictionRiskReason.MethodMirrorIncomplete);
+            return true;
+        }
         return LateRegistry.Invoke(listener, context, true).Value;
     }
 
