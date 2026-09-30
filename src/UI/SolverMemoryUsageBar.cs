@@ -43,6 +43,7 @@ internal sealed partial class SolverMemoryUsageBar : PanelContainer
     private double _shownProcessRatio;
     private double _shownProcessBytes;
     private double _shownLimitBytes;
+    private double _shownManagedHeapGrowthBytes;
     private Color _shownColor;
     private double _cleanupPulseSeconds;
     private string? _renderedText;
@@ -53,12 +54,13 @@ internal sealed partial class SolverMemoryUsageBar : PanelContainer
         Name = "MemoryUsage";
         CustomMinimumSize = new Vector2(0f, SolverUiTokens.Size.ButtonHeight);
         MouseFilter = MouseFilterEnum.Pass;
-        TooltipText =
-            SolverText.Get("求解器内存与性能监视\n") +
-            SolverText.Get("- 灰色：系统和其他程序当前占用的内存。\n") +
-            SolverText.Get("- 彩色：游戏进程当前占用的内存，包含求解器与其他已加载 Mod。\n") +
-            SolverText.Get("- 当前占用 / 上限：游戏进程占用 / 安全总量扣除系统占用后的动态上限。\n") +
-            SolverText.Get("- 系统内存变化时，上限和进度条会自动调整；正在整理或后台清理属于正常释放阶段。");
+        TooltipText = MobilePortPolicy.IsMobile
+            ? SolverText.Get("进程占用包含游戏及所有模组；搜索数字是本次搜索新增的托管堆。4 GB 是停止继续展开的软预算，不是已预留的内存或手机可用内存，单次展开仍可能超过预算。")
+            : SolverText.Get("求解器内存与性能监视\n") +
+              SolverText.Get("- 灰色：系统和其他程序当前占用的内存。\n") +
+              SolverText.Get("- 彩色：游戏进程当前占用的内存，包含求解器与其他已加载 Mod。\n") +
+              SolverText.Get("- 当前占用 / 上限：游戏进程占用 / 安全总量扣除系统占用后的动态上限。\n") +
+              SolverText.Get("- 系统内存变化时，上限和进度条会自动调整；正在整理或后台清理属于正常释放阶段。");
         AddThemeStyleboxOverride("panel", SolverUiTokens.CreateBox(
             SolverUiTokens.Palette.SurfaceRaised,
             SolverUiTokens.Palette.BorderSubtle,
@@ -192,6 +194,13 @@ internal sealed partial class SolverMemoryUsageBar : PanelContainer
             SystemMemoryLimitBytes: 22_000_000_000L,
             Reclaiming: false,
             BackgroundReclaiming: false));
+        MemoryBarDisplay mobile = BuildDisplay(new SearchMemoryUsageSnapshot(
+            1_100_000_000L, 0, 0, true, 0, long.MaxValue, 0, long.MaxValue,
+            Reclaiming: false, BackgroundReclaiming: false)
+        {
+            ManagedHeapGrowthBytes = 300_000_000L,
+            ManagedHeapBudgetBytes = 4_000_000_000L,
+        });
         return active.Text == "当前内存占用 6.4 GB / 搜索总可用 7.0 GB  ·  即将整理"
             && Math.Abs(active.PressureRatio - 6.4d / 7d) < 0.001d
             && active.Tone == MemoryPressureTone.Danger
@@ -203,7 +212,10 @@ internal sealed partial class SolverMemoryUsageBar : PanelContainer
             && Math.Abs(background.PressureRatio - 2d / 3d) < 0.001d
             && background.Tone == MemoryPressureTone.Warning
             && systemLimited.Text == "当前内存占用 7.2 GB / 搜索总可用 8.0 GB  ·  即将整理"
-            && Math.Abs(systemLimited.PressureRatio - 0.9d) < 0.001d;
+            && Math.Abs(systemLimited.PressureRatio - 0.9d) < 0.001d
+            && mobile.Text == "进程 1.1 GB · 搜索新增 0.3/4.0 GB（软限）"
+            && Math.Abs(mobile.PressureRatio - 0.075d) < 0.001d
+            && mobile.SystemRatio == 0d;
     }
 
     private void RefreshDisplay()
@@ -218,6 +230,7 @@ internal sealed partial class SolverMemoryUsageBar : PanelContainer
             _shownProcessRatio = display.ProcessRatio;
             _shownProcessBytes = display.ProcessBytes;
             _shownLimitBytes = display.LimitBytes;
+            _shownManagedHeapGrowthBytes = display.ManagedHeapGrowthBytes;
             _shownColor = ToneColor(display.Tone);
             ApplyShownDisplay(display);
         }
@@ -234,6 +247,8 @@ internal sealed partial class SolverMemoryUsageBar : PanelContainer
         // Snap once the eased value would round to the same 0.1 GB the label prints.
         _shownProcessBytes = SolverUiMotion.Approach(_shownProcessBytes, target.ProcessBytes, blend, BytesPerGigabyte / 200d);
         _shownLimitBytes = SolverUiMotion.Approach(_shownLimitBytes, target.LimitBytes, blend, BytesPerGigabyte / 200d);
+        _shownManagedHeapGrowthBytes = SolverUiMotion.Approach(
+            _shownManagedHeapGrowthBytes, target.ManagedHeapGrowthBytes, blend, BytesPerGigabyte / 200d);
         _shownColor = SolverUiMotion.Approach(_shownColor, ToneColor(target.Tone), blend);
         _cleanupPulseSeconds = IsCleanupState(target.State)
             ? (_cleanupPulseSeconds + delta) % CleanupPulsePeriodSeconds
@@ -243,8 +258,12 @@ internal sealed partial class SolverMemoryUsageBar : PanelContainer
 
     private void ApplyShownDisplay(MemoryBarDisplay target)
     {
-        string text = FormatSummary((long)Math.Round(_shownProcessBytes), (long)Math.Round(_shownLimitBytes))
-            + target.Suffix;
+        string text = (target.IsMobileSoftBudget
+                ? FormatMobileSummary((long)Math.Round(_shownProcessBytes),
+                    (long)Math.Round(_shownManagedHeapGrowthBytes),
+                    (long)Math.Round(_shownLimitBytes))
+                : FormatSummary((long)Math.Round(_shownProcessBytes),
+                    (long)Math.Round(_shownLimitBytes))) + target.Suffix;
         if (!string.Equals(_renderedText, text, StringComparison.Ordinal))
         {
             _renderedText = text;
@@ -293,15 +312,36 @@ internal sealed partial class SolverMemoryUsageBar : PanelContainer
     }
 
     private static MemoryBarDisplay BuildDisplay(SearchMemoryUsageSnapshot snapshot)
-        => BuildDisplayState(snapshot) with
+    {
+        if (snapshot.ManagedHeapBudgetBytes > 0)
+        {
+            double ratio = Math.Clamp(snapshot.ManagedHeapGrowthBytes
+                / (double)snapshot.ManagedHeapBudgetBytes, 0d, 1d);
+            return new MemoryBarDisplay(
+                string.Empty, 0d, ratio, ratio, ToneForRatio(ratio),
+                snapshot.SearchActive ? MemoryDisplayState.Search : MemoryDisplayState.Idle)
+            {
+                ProcessBytes = snapshot.ProcessWorkingSetBytes,
+                LimitBytes = snapshot.ManagedHeapBudgetBytes,
+                ManagedHeapGrowthBytes = snapshot.ManagedHeapGrowthBytes,
+                IsMobileSoftBudget = true,
+            };
+        }
+        return BuildDisplayState(snapshot) with
         {
             ProcessBytes = snapshot.ProcessWorkingSetBytes,
             LimitBytes = snapshot.ProcessMemoryLimitBytes,
         };
+    }
 
     private static string FormatSummary(long processBytes, long limitBytes)
         => SolverText.Get("当前内存占用 ") + FormatGigabytes(processBytes) + " GB" +
             SolverText.Get(" / 搜索总可用 ") + FormatGigabytes(limitBytes) + " GB";
+
+    private static string FormatMobileSummary(long processBytes, long growthBytes, long budgetBytes)
+        => SolverText.Get("进程 ") + FormatGigabytes(processBytes) + " GB · " +
+           SolverText.Get("搜索新增 ") + FormatGigabytes(growthBytes) + "/" +
+           FormatGigabytes(budgetBytes) + SolverText.Get(" GB（软限）");
 
     private static MemoryBarDisplay BuildDisplayState(SearchMemoryUsageSnapshot snapshot)
     {
@@ -414,6 +454,10 @@ internal sealed partial class SolverMemoryUsageBar : PanelContainer
     {
         public long ProcessBytes { get; init; }
         public long LimitBytes { get; init; }
-        public string Text => FormatSummary(ProcessBytes, LimitBytes) + Suffix;
+        public long ManagedHeapGrowthBytes { get; init; }
+        public bool IsMobileSoftBudget { get; init; }
+        public string Text => (IsMobileSoftBudget
+            ? FormatMobileSummary(ProcessBytes, ManagedHeapGrowthBytes, LimitBytes)
+            : FormatSummary(ProcessBytes, LimitBytes)) + Suffix;
     }
 }

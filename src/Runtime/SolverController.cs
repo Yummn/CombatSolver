@@ -222,14 +222,22 @@ internal static partial class SolverController
         return new SearchMemoryUsageSnapshot(
             System.Environment.WorkingSet,
             physicalMemory.UsedBytes,
-            settings.NoGcRegionBudgetBytes,
+            MobilePortPolicy.IsMobile
+                ? MobilePortPolicy.SearchManagedHeapBudgetBytes : settings.NoGcRegionBudgetBytes,
             IsSearching,
             pressure.AllocatedBytes,
             pressure.AllocationLimitBytes,
             pressure.ProjectedMemoryLoadBytes,
             systemMemoryLimit,
             pressure.Reclaiming,
-            SearchGcPolicy.IsBackgroundReclaiming);
+            SearchGcPolicy.IsBackgroundReclaiming)
+        {
+            ManagedHeapGrowthBytes = MobilePortPolicy.IsMobile
+                && signal is { ManagedHeapBudgetBytes: not long.MaxValue }
+                    ? signal.ManagedHeapGrowthBytes : 0,
+            ManagedHeapBudgetBytes = MobilePortPolicy.IsMobile
+                ? MobilePortPolicy.SearchManagedHeapBudgetBytes : 0,
+        };
     }
     internal static void LogSearchMemoryDisplayState(
         SearchMemoryUsageSnapshot snapshot,
@@ -257,6 +265,8 @@ internal static partial class SolverController
             $"system_pressure={snapshot.SystemPressureRatio:F3} " +
             $"system_pressure_dominates={snapshot.SystemPressureDominates.ToString().ToLowerInvariant()} " +
             $"configured_budget={snapshot.ConfiguredMemoryBudgetBytes} " +
+            $"managed_search_growth={snapshot.ManagedHeapGrowthBytes} " +
+            $"managed_search_budget={snapshot.ManagedHeapBudgetBytes} " +
             $"working_set={process.WorkingSet64} private_bytes={process.PrivateMemorySize64} " +
             $"managed_live={GC.GetTotalMemory(forceFullCollection: false)} " +
             $"managed_heap={memory.HeapSizeBytes} fragmented={memory.FragmentedBytes} " +

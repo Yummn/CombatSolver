@@ -37,6 +37,10 @@ internal readonly record struct SearchMemoryUsageSnapshot(
     bool Reclaiming,
     bool BackgroundReclaiming)
 {
+    // Android uses a per-search managed-heap-growth soft bound, not the
+    // desktop No-GC allocation wall or a physical-RAM headroom estimate.
+    public long ManagedHeapGrowthBytes { get; init; }
+    public long ManagedHeapBudgetBytes { get; init; }
     public bool HasGcWall => SearchAllocationLimitBytes != long.MaxValue;
     public double AllocationPressureRatio => HasGcWall
         ? Math.Clamp(SearchAllocatedBytes / (double)Math.Max(1, SearchAllocationLimitBytes), 0d, 1d)
