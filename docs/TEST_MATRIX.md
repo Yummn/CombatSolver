@@ -1,5 +1,10 @@
 # CombatSolver 测试清单
 
+## BetterDefect `BdSeek`（2026-09-30）
+
+- 截图失败基线：手机 v0.111.0 提示 `卡牌 BdSeek 的效果尚未适配`，本场保护性停止搜索及全自动。v0.11.66 源码确定为从抽牌堆选 1（升级后 2）张移入手牌。
+- 精确类型白名单、OnPlay 镜像、抽牌堆选择规格已接入；Android Release 编译 0 警告／0 错误，结构门禁及 `git diff --check` 通过。ADB 未连接，实际选牌、牌堆变动和严格差分仍未验证。
+
 ## 手机搜索托管堆 4 GB 软预算（2026-09-30）
 
 - Android v0.111.0 Release 编译通过（0 警告／0 错误）；`CombatSolver.GcPolicyChecks -- memory` 通过 2 项（包括超小预算触发、请求结束清理与非法预算拒绝）；结构门禁与 `git diff --check` 通过。

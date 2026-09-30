@@ -41,6 +41,7 @@ internal static class BetterDefectMobileCompatibility
         "BetterDefect.Cards.BdRecycle",
         "BetterDefect.Cards.BdStaticDischarge",
         "BetterDefect.Cards.BdHeatsinks",
+        "BetterDefect.Cards.BdSeek",
     };
     private static readonly HashSet<string> MirroredTemporaryPowers = new(StringComparer.Ordinal)
     {
@@ -353,6 +354,10 @@ internal static class BetterDefectMobileCompatibility
         => CanMirrorCustomCard(card)
             && card.GetType().FullName == "BetterDefect.Cards.BdRecycle";
 
+    internal static bool IsMirroredSeek(CardModel card)
+        => CanMirrorCustomCard(card)
+            && card.GetType().FullName == "BetterDefect.Cards.BdSeek";
+
     internal static bool IsMirroredTemporaryPower(PowerModel power)
         => MirroredTemporaryPowers.Contains(power.GetType().FullName ?? "") && IsMirroredPower(power);
 
@@ -410,6 +415,11 @@ internal static class BetterDefectMobileCompatibility
             case "BetterDefect.Cards.BdRecycle":
                 // The hand selection and post-selection energy gain are owned by
                 // CardChoiceSupport/CardChoiceResolution, not by this OnPlay.
+                result = new(MirrorDispatchKind.Handled);
+                return true;
+            case "BetterDefect.Cards.BdSeek":
+                // Its draw-pile selection is resolved through CardChoiceSupport.
+                // OnPlay itself has no effect before the selected cards move to hand.
                 result = new(MirrorDispatchKind.Handled);
                 return true;
             case "BetterDefect.Cards.BdStaticDischarge":

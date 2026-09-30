@@ -101,6 +101,11 @@ internal static partial class CardChoiceSupport
                 && BetterDefectMobileCompatibility.IsTransformed<MegaCrit.Sts2.Core.Models.Cards.Stack>())
             return Spec(owner, PlanChoiceEffect.Exhaust, PileType.Hand, 1, owner.Hand.Cards);
 
+        if (BetterDefectMobileCompatibility.IsMirroredSeek(card))
+            return Spec(owner, PlanChoiceEffect.MoveToHand, PileType.Draw,
+                Math.Min(card.DynamicVars["Amount"].IntValue, owner.DrawPile.Cards.Count),
+                owner.DrawPile.Cards);
+
         return card switch
         {
             SeekerStrike => BuildSeekerSpec(simulator, playedCard, owner),
