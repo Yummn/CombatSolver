@@ -21,6 +21,15 @@ internal static class AfterOrbChanneledMirrors
 
     public static void Invoke(AbstractModel listener, AfterOrbChanneledMirrorContext context)
     {
+        // These powers only install native orb-event subscriptions. Their
+        // effects are resolved directly by the lightning/glass orb mirrors;
+        // retaining native subscriptions in a branch would mutate live state.
+        if (listener is PowerModel orbSubscription
+            && BetterDefectMobileCompatibility.IsMirroredPower(orbSubscription)
+            && orbSubscription.GetType().FullName is
+                "BetterDefect.Cards.BdElectrodynamicsPower" or
+                "BetterDefect.Cards.BdSpinnerNoDecayPower")
+            return;
         if (listener is PowerModel power
             && BetterDefectMobileCompatibility.IsMirroredPower(power)
             && power.GetType().FullName == "BetterDefect.Cards.BdStormChargePower")

@@ -656,6 +656,10 @@ internal sealed partial class SimulatedCombatState
             return 0;
         T incoming = CreatePowerForApplication<T>(target, null, applier);
         amount = ModifyPowerAmountForRelics(incoming, target, amount, applier);
+        if (typeof(T) == typeof(FocusPower))
+            amount = BetterDefectMobileCompatibility.ModifyReviewedFocusLoss(this, target, amount);
+        if (amount == 0)
+            return 0;
         if (incoming.GetTypeForAmount(amount) == MegaCrit.Sts2.Core.Entities.Powers.PowerType.Debuff
             && ConsumeArtifact(target))
         {

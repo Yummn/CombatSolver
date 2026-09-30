@@ -48,6 +48,13 @@ internal static class AfterEnergyResetMirrors
                 context.Simulator.OrbChannel<GlassOrb>(context.Player, power.Amount);
             return;
         }
+        if (BetterDefectMobileCompatibility.IsMirroredPower(power)
+            && power.GetType().FullName == "BetterDefect.Cards.BdReworkedBiasedCognitionPower")
+        {
+            if (power.Owner.Player == context.Player)
+                context.Combat.Apply<FocusPower>(power.Owner, -power.Amount, power.Owner);
+            return;
+        }
         Registry.Invoke(power, context);
     }
 

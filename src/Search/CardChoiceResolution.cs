@@ -353,6 +353,7 @@ internal static partial class CardChoiceSupport
             case Scavenge:
                 combat.AddEnergyNextTurn(source.Owner, source.DynamicVars.Energy.IntValue);
                 return true;
+            case Skim when BetterDefectMobileCompatibility.IsTransformed<Skim>():
             case BurningPact:
             {
                 bool sourceAlreadyInDiscard = playedCard.GetPile(simulator.State)?.Type == PileType.Discard;
@@ -368,6 +369,9 @@ internal static partial class CardChoiceSupport
                     simulator.AddToPile(playedCard, PileType.Discard);
                 return !simulator.HasPendingChoice;
             }
+            case Synthesis when BetterDefectMobileCompatibility.IsTransformed<Synthesis>():
+                combat.Apply<FreePowerPower>(source.Owner.Creature, 1, source.Owner.Creature);
+                return !simulator.HasPendingChoice;
         }
         return true;
     }

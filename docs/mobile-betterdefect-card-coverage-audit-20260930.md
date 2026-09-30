@@ -1,40 +1,30 @@
-# BetterDefect v0.11.66 手机卡牌适配清点（2026-09-30）
+# BetterDefect v0.11.66 / 游戏 v0.111.0 适配清点（2026-09-30）
 
-目标：CombatSolver 手机 v0.111.0；依据 `BetterDefectCode/OldDefectCards.cs`、`CardVersionUpgrades.cs`、`CardsAndPowers.cs` 与 `src/Prediction/BetterDefectMobileCompatibility.cs` 的源码逐项比对。此清点仅证明当前**放行名单**，不能替代真实战斗差分。
+目标是手机移植版 CombatSolver 的单人战斗预测；本次在与手机同版的 Windows 游戏 v0.111.0（Steam BuildID 24724944）建立隔离无头夹具。手机 ADB 未连接，因此下列实战结果**不是** Android 真机结果。只匹配已审阅的 BetterDefect v0.11.66；其他版本与未知第三方效果继续明确拒绝，不以原版效果假装适配。
 
-## 一代重制／先古自定义卡
+## 清点与实现
 
-共 23 张 `Bd*` 卡（22 张一代重制卡、1 张达弗先古卡），当前放行 9 张：`BdAutoShields`、`BdConsume`、`BdHeatsinks`、`BdRecursion`、`BdRecycle`、`BdReinforcedBody`、`BdSeek`、`BdStaticDischarge`、`BdStreamline`。
+依据 `BetterDefectCode/OldDefectCards.cs`、`CardVersionUpgrades.cs`、`CardsAndPowers.cs` 逐项清点：
 
-仍未适配 14 张：
+- 23 张 `Bd*` 自定义卡（22 张一代重制卡、1 张达弗先古卡）均有预测入口。原先缺失的 14 张已逐张补齐：汇集、暴雪、瞄准靶心、核心电涌、愁云惨淡、电动力学、裂变、力场、熔化、重编程、偏差认知*改、自我修复、蒸汽护壁、雷霆打击。
+- 百科大全的 `VersionedCardTypes` 共 79 种。原先缺失的 17 种已分别补充卡牌、Power、充能球、选牌与临时费用的分支镜像；`BufferCard`、`StackCard` 别名按原版类型计数，不重复计算。
+- 冰雹风暴的已生效能力按改造状态与冰球数触发；旋转工艺对玻璃球订阅只模拟数值效果，不向影子球安装实机回调；电动力学的全体命中同理。白噪声的三选一在路线内显式建模，不再把已解析的原生选项误报为“未镜像”。
+- 多段、激发、抽牌与生成球遇到挂起选择时有续执行帧；改造牌的 PC Harmony 前缀只对已审阅的类型放行，未知补丁仍失败关闭。
 
-| 类型 | 卡名 | 主要额外语义 |
+## 运行验证
+
+隔离夹具仅加载 RitsuLib 0.6.2、BetterDefect 0.11.66 与 CombatSolver 测试构建，PC 游戏与手机目标同为 v0.111.0：
+
+| 范围 | 结果 | 证明边界 |
 | --- | --- | --- |
-| `BdAggregate` | 汇集 | 按抽牌堆张数获得能量 |
-| `BdBlizzard` | 暴雪 | 读取本场已生成冰霜球次数 |
-| `BdBullseye` | 瞄准靶心 | 锁定与改造后的优先目标能力 |
-| `BdCoreSurge` | 核心电涌 | 伤害、人工制品 |
-| `BdDoomAndGloom` | 愁云惨淡 | 群伤后生成黑暗球 |
-| `BdElectrodynamics` | 电动力学 | 自定义能力让闪电命中全体 |
-| `BdFission` | 裂变 | 移除／激发充能球并逐个回能、抽牌 |
-| `BdForceField` | 力场 | 动态费用修改 hook |
-| `BdMelter` | 熔化 | 移除格挡、伤害及改造追加易伤 |
-| `BdReprogram` | 重编程 | 集中、力量、敏捷及改造后的球处理 |
-| `BdReworkedBiasedCognition` | 偏差认知*改 | 达弗先古卡及持续集中能力 |
-| `BdSelfRepair` | 自我修复 | 战斗结束时回血能力 |
-| `BdSteamBarrier` | 蒸汽护壁 | 打出后本场该牌格挡值减少 |
-| `BdThunderStrike` | 雷霆打击 | 读取本场已生成闪电球次数、随机多段攻击 |
+| 79 种改造 | 79/79 首轮搜索准入；62 种既有名单的逐卡矩阵经对启动故障重试后通过，17 种新增中 3 项先行通过、其余 14 项矩阵通过 | 每次只开启一种改造，要求首轮路线 `Unmirrored=0`；不是 79 张逐一实机出牌差分 |
+| 23 张自定义卡 | 原先缺失 14 张逐卡首轮搜索准入；瞄准靶心的启动失败项另经未改造及改造的整战通过 | 首轮准入与部分整战；不能外推所有组合 |
+| 原生全自动出牌 | 裂变+、电动力学、改造/未改造瞄准靶心、重编程+、合成+、快速检索、愁云惨淡、冰雹风暴、白噪声、旋转工艺+、改造/未改造熔化等定向夹具通过 | 对应运行日志 `REPLAN_SUMMARY state_mismatch=0`；覆盖了生成卡选择、玻璃球及有格挡的怪物，不是所有升级/附魔/遗物排列 |
 
-以上 14 张中除达弗先古卡外均可进入普通卡池；只要其中一张已在本场牌组／战斗牌堆中，预检就会停止求解器，而非只跳过该张牌。
+本次 `WhiteNoise` 初测曾因 `UnresolvedPlayerChoice` 被错误当成未镜像，`Spinner` 初测曾因原生事件订阅被错误当成未镜像；两项均以最小场景定位并修复，之后在 PC v0.111.0 无头完整自动出牌通过。矩阵中的 `NoResult` 和 `game_startup` 是进程在进入夹具前的启动故障，已逐项重试；不能拿第一次矩阵原始数字直接宣称全通过。
 
-## 百科大全可选改造
+## 尚未声称的范围
 
-`VersionedCardTypes` 共 79 种。按当前求解器放行名单并将 `BufferCard`、`StackCard` 别名还原后，62 种在名单中，17 种尚未放行：
-
-`AdaptiveStrike`, `BdBullseye`, `BdCoreSurge`, `BdForceField`, `BdMelter`, `BdReprogram`, `BdSteamBarrier`, `BdThunderStrike`, `BeamCell`, `BulkUp`, `Hailstorm`, `IceLance`, `MomentumStrike`, `Refract`, `RipAndTear`, `Skim`, `Synthesis`。
-
-其中 7 种也是上表中的自定义卡。此前用户手机存档开启的 59 项改造均在放行名单中，但这**不等于**全部 79 项都适配。未放行的改造即使全局开启，也只在其卡牌进入当前战斗时触发预检拦截；不能因此把原版／未改造效果冒充为改造效果。
-
-## 验证边界
-
-本次只有源码清点，ADB 未连接，没有对上述缺口制作预测镜像，也未实测 9 张已放行自定义卡的所有升级、附魔、球／能力组合。特别是 `BdHeatsinks` 与新加入的 `BdSeek` 仍缺 Android 原生结算对预测的差分证据。缺口应逐张审阅卡牌、能力、随机与隐藏计数语义后补镜像，不能直接把类型加入放行名单。
+- 没有 Android 真机 v0.111.0 运行证据；PC 同版本覆盖共享 C# 语义，但不能证明 Android 的 Ritsu 出牌回调、触控 UI 或手机性能。
+- “首轮可搜索／可自动打出”不等于每张卡在所有升级、附魔、未知 Mod、随机牌池、死亡和跨回合场景都经过严格差分。未审阅的生成牌或第三方行为仍按失败关闭。
+- 自我修复的战斗内 Power 已建模；它的战后回血目前未纳入路线终局估值，因此搜索可能低估该牌的战略价值，但真实回血仍由 BetterDefect 原生结算。此项不应表述为已完成评分适配。

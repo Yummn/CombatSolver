@@ -2,6 +2,7 @@ using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Powers;
+using MegaCrit.Sts2.Core.Extensions;
 using MegaCrit.Sts2.Core.ValueProps;
 using CombatSolver.Engine.Common;
 using CombatSolver.Engine.InCombat.Simulation;
@@ -10,6 +11,27 @@ namespace CombatSolver.Engine.InCombat.Mirrors.Cards.OnPlay;
 
 internal static class CardDrawCardMirrors
 {
+    public static void SynthesisOnPlay(Synthesis card, CardOnPlayMirrorContext context)
+    {
+        context.AttackSingle();
+        if (context.Simulator.HasPendingChoice || !BetterDefectMobileCompatibility.IsTransformed<Synthesis>())
+            return;
+        var powers = context.OwnerState.DrawPile.Cards
+            .Where(candidate => candidate.Preview.Type == CardType.Power).ToList();
+        if (card.IsUpgraded && powers.Count > 0)
+            return; // Search's native grid choice moves the selected power first.
+        if (powers.Count > 0)
+        {
+            var selected = powers.StableShuffle(context.Rng.Shuffle).First();
+            context.Simulator.AddToPile(selected, PileType.Hand);
+            if (context.Simulator.HasPendingChoice)
+                return;
+        }
+        if (context.CombatState is not SimulatedCombatState combat)
+            throw new InvalidOperationException("改造人工合成缺少分支战斗状态。");
+        combat.Apply<FreePowerPower>(card.Owner.Creature, 1, card.Owner.Creature);
+    }
+
     public static void AdrenalineOnPlay(Adrenaline card, CardOnPlayMirrorContext context)
     {
         context.Simulator.GainEnergy(card.Owner, card.DynamicVars.Energy.IntValue);

@@ -130,6 +130,14 @@ internal static partial class CardOnPlayMirrors
         registry.Register<Reboot>(CardDrawCardMirrors.RebootOnPlay);
         registry.Register<Restlessness>(CardDrawCardMirrors.RestlessnessOnPlay);
         registry.Register<Scrape>(CardDrawCardMirrors.ScrapeOnPlay);
+        registry.Register<Skim>(static (card, context) =>
+        {
+            if (!BetterDefectMobileCompatibility.IsTransformed<Skim>())
+                context.Simulator.Draw(card.Owner, card.DynamicVars.Cards.BaseValue);
+            // The transformed card first chooses a hand card to discard. Its
+            // draw is continued after that selection in CardChoiceResolution.
+        });
+        registry.Register<Synthesis>(CardDrawCardMirrors.SynthesisOnPlay);
         registry.Register<Scrawl>(CardDrawCardMirrors.ScrawlOnPlay);
         registry.Register<SpoilsOfBattle>(CardDrawCardMirrors.SpoilsOfBattleOnPlay);
 
@@ -235,6 +243,15 @@ internal static partial class CardOnPlayMirrors
                     return;
             }
         });
+
+        // These native OnPlay overrides only animate and apply the power.
+        // CardOnPlaySupport/CorePowerSupport apply their exact power payloads;
+        // a generated power (notably transformed White Noise's choice) must
+        // not acquire a false unmirrored risk merely for the animation.
+        registry.RegisterIgnored<MegaCrit.Sts2.Core.Models.Cards.Buffer>();
+        registry.RegisterIgnored<Defragment>();
+        registry.RegisterIgnored<Feral>();
+        registry.RegisterIgnored<Storm>();
 
         registry.RegisterStrictInferrer(CardOnPlayInferrer.InferStrict);
         registry.RegisterInferrer(CardOnPlayInferrer.Infer);

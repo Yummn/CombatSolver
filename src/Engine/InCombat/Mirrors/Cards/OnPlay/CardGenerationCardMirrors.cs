@@ -327,7 +327,11 @@ internal static class CardGenerationCardMirrors
                     context.CardMultiplayerConstraint,
                     static candidate => candidate.Type == CardType.Power)
                 .ToList();
-            RecordOptions(context, options);
+            // This reviewed replacement has an executable native choice:
+            // CardChoiceSupport records the selected option and
+            // CardChoiceResolution materializes exactly that card. Unlike
+            // best-effort generators, the selection is not left unresolved.
+            RecordOptions(context, options, unresolved: false);
             return;
         }
         var cards = context.Simulator.GetDistinctUnlockedCharacterCardsForCombat(
@@ -342,7 +346,8 @@ internal static class CardGenerationCardMirrors
         context.Simulator.AddGeneratedCardsToCombat(cards, PileType.Hand, card.Owner);
     }
 
-    private static void RecordOptions(CardOnPlayMirrorContext context, IReadOnlyList<PredictedCard> cards)
+    private static void RecordOptions(CardOnPlayMirrorContext context, IReadOnlyList<PredictedCard> cards,
+        bool unresolved = true)
     {
         if (cards.Count == 0)
         {
@@ -352,6 +357,7 @@ internal static class CardGenerationCardMirrors
         context.Simulator.History.CardGenerationOptions(cards);
         // Vanilla next asks the player to choose an option. Record the deterministic options first,
         // then mark the unresolved choice so replayed or nested results inherit the uncertainty.
-        context.History.RecordRisk(PredictionRiskReason.UnresolvedPlayerChoice);
+        if (unresolved)
+            context.History.RecordRisk(PredictionRiskReason.UnresolvedPlayerChoice);
     }
 }

@@ -38,6 +38,7 @@ internal static class LightningOrbMirrors
             return [];
         }
 
+        target ??= BetterDefectMobileCompatibility.PriorityOrbTarget(context.Simulator, orb.Owner);
         target ??= context.Rng.CombatTargets.NextItem(candidates);
         if (target is null)
         {
@@ -46,6 +47,15 @@ internal static class LightningOrbMirrors
 
         IReadOnlyList<Creature> targets = [target];
         context.Simulator.Damage(targets, value, ValueProp.Unpowered, orb.Owner.Creature);
+        if (!context.Simulator.HasPendingChoice
+            && BetterDefectMobileCompatibility.HasElectrodynamics(context.Simulator, orb.Owner))
+        {
+            var missing = context.State.GetOpponentsOf(orb.Owner.Creature)
+                .Where(context.State.IsHittable)
+                .Where(enemy => enemy != target).ToList();
+            if (missing.Count > 0)
+                context.Simulator.Damage(missing, value, ValueProp.Unpowered, orb.Owner.Creature);
+        }
         return targets;
     }
 }

@@ -21,7 +21,8 @@ internal static class DarkOrbMirrors
     // Mirrors DarkOrb.Evoke without VFX/SFX or waits.
     public static IReadOnlyList<Creature> Evoke(DarkOrb orb, OrbMirrorContext context)
     {
-        var target = context.State.HittableEnemies
+        var target = BetterDefectMobileCompatibility.PriorityOrbTarget(context.Simulator, orb.Owner)
+            ?? context.State.HittableEnemies
             .MinBy(creature => context.State.GetCreature(creature).CurrentHp);
         if (target is null)
         {

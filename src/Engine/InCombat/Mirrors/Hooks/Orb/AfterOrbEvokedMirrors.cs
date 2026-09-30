@@ -20,6 +20,9 @@ internal static class AfterOrbEvokedMirrors
 
     public static void Invoke(AbstractModel listener, AfterOrbEvokedMirrorContext context)
     {
+        if (listener is PowerModel power && BetterDefectMobileCompatibility.IsMirroredPower(power)
+            && power.GetType().FullName == "BetterDefect.Cards.BdElectrodynamicsPower")
+            return; // Already spread by LightningOrbMirrors, preserving original evoke target list.
         Registry.Invoke(listener, context);
     }
 

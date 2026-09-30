@@ -140,6 +140,11 @@ internal static partial class CardChoiceSupport
                     simulator.GetMaxHandSize(card.Owner) - owner.Hand.Cards.Count),
                 discardBeforeResolution),
             Survivor or Acrobatics or DaggerThrow => Spec(owner, PlanChoiceEffect.Discard, PileType.Hand, 1, owner.Hand.Cards),
+            Skim when BetterDefectMobileCompatibility.IsTransformed<Skim>() =>
+                Spec(owner, PlanChoiceEffect.Discard, PileType.Hand, 1, owner.Hand.Cards),
+            Synthesis when BetterDefectMobileCompatibility.IsTransformed<Synthesis>() && card.IsUpgraded =>
+                Spec(owner, PlanChoiceEffect.MoveToHand, PileType.Draw, 1,
+                    owner.DrawPile.Cards.Where(item => item.Preview.Type == CardType.Power)),
             BurningPact => Spec(owner, PlanChoiceEffect.Exhaust, PileType.Hand, 1, owner.Hand.Cards),
             Prepared => Spec(owner, PlanChoiceEffect.Discard, PileType.Hand, card.DynamicVars.Cards.IntValue, owner.Hand.Cards),
             ThinkingAhead => Spec(owner, PlanChoiceEffect.MoveToDrawTop, PileType.Hand, 1, owner.Hand.Cards),

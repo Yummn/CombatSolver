@@ -140,6 +140,9 @@ internal static class PredictionModPatchAudit
                 $"(owner={patch.owner}) on mirrored {target.DeclaringType?.FullName}.{target.Name}.");
         if (string.Equals(modId, Entry.ModId, StringComparison.OrdinalIgnoreCase))
             return null;
+        if (string.Equals(modId, "BetterDefect", StringComparison.OrdinalIgnoreCase)
+            && BetterDefectMobileCompatibility.IsReviewedOnPlayPatch(patchType, target))
+            return null;
 
         return new ForeignPatch(
             modId,

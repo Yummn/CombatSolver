@@ -30,6 +30,9 @@ internal static class AfterDamageGivenMirrors
 
     public static void Invoke(AbstractModel listener, AfterDamageGivenMirrorContext context)
     {
+        if (listener is PowerModel power && BetterDefectMobileCompatibility.IsMirroredPower(power)
+            && power.GetType().FullName == "BetterDefect.Cards.BdElectrodynamicsPower")
+            return; // The lightning mirror performs the spread at the orb damage site.
         Registry.Invoke(listener, context);
     }
 

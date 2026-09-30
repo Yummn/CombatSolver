@@ -1,6 +1,7 @@
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Models.Cards;
+using MegaCrit.Sts2.Core.Extensions;
 using CombatSolver.Engine.InCombat.Simulation;
 
 namespace CombatSolver.Engine.InCombat.Mirrors.Cards.OnPlay;
@@ -43,6 +44,33 @@ internal static class RandomTargetAttackCardMirrors
 
     public static void RipAndTearOnPlay(RipAndTear card, CardOnPlayMirrorContext context)
     {
+        if (BetterDefectMobileCompatibility.IsTransformed<RipAndTear>())
+        {
+            Dictionary<MegaCrit.Sts2.Core.Entities.Creatures.Creature, int> counts = [];
+            for (int i = 0; i < 3 && !context.Simulator.HasPendingChoice; i++)
+            {
+                var enemies = context.State.HittableEnemies.ToList();
+                if (enemies.Count == 0)
+                    break;
+                var target = context.Rng.CombatTargets.NextItem(enemies)
+                    ?? throw new InvalidOperationException("RipAndTear has no random target.");
+                counts[target] = counts.GetValueOrDefault(target) + 1;
+                // BetterDefect uses CreatureCmd.Damage with the card as source,
+                // not DamageCmd.Attack: no attack-start/card-play hook per hit.
+                context.Simulator.Damage([target], card.DynamicVars.Damage.BaseValue,
+                    card.DynamicVars.Damage.Props, card.Owner.Creature, context.Card, null);
+            }
+            foreach (var target in counts.Where(pair => pair.Value >= 2).Select(pair => pair.Key))
+            {
+                if (context.Simulator.HasPendingChoice)
+                    return;
+                if (!context.State.IsHittable(target))
+                    continue;
+                context.Simulator.Damage([target], card.DynamicVars.Damage.BaseValue,
+                    card.DynamicVars.Damage.Props, card.Owner.Creature, context.Card, null);
+            }
+            return;
+        }
         context.AttackRandomOpponents(hitCount: 2);
     }
 

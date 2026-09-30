@@ -307,10 +307,13 @@ internal static class CorePowerSupport
                 combat.Apply<ThornsPower>(owner, card.DynamicVars["ThornsPower"].IntValue, owner);
                 break;
             case BulkUp:
-                simulator.State.GetPlayerCombatState(card.Owner).OrbQueue.RemoveCapacity(
-                    card.DynamicVars["OrbSlots"].IntValue);
-                combat.Apply<StrengthPower>(owner, card.DynamicVars.Strength.IntValue, owner);
-                combat.Apply<DexterityPower>(owner, card.DynamicVars.Dexterity.IntValue, owner);
+                var bulkUpQueue = simulator.State.GetPlayerCombatState(card.Owner).OrbQueue;
+                bulkUpQueue.RemoveCapacity(card.DynamicVars["OrbSlots"].IntValue);
+                int bulkUpBonus = BetterDefectMobileCompatibility.IsTransformed<BulkUp>()
+                    ? bulkUpQueue.Capacity : card.DynamicVars.Strength.IntValue;
+                combat.Apply<StrengthPower>(owner, bulkUpBonus, owner);
+                combat.Apply<DexterityPower>(owner, BetterDefectMobileCompatibility.IsTransformed<BulkUp>()
+                    ? bulkUpBonus : card.DynamicVars.Dexterity.IntValue, owner);
                 break;
             case Resonance:
                 combat.Apply<StrengthPower>(owner, card.DynamicVars["StrengthPower"].IntValue, owner);
@@ -357,6 +360,11 @@ internal static class CorePowerSupport
                 break;
             case LegSweep or SuckerPunch or Null or Suppress when target != null:
                 combat.Apply<WeakPower>(target, card.DynamicVars.Weak.IntValue, owner);
+                break;
+            case BeamCell when target != null && BetterDefectMobileCompatibility.IsTransformed<BeamCell>():
+                combat.ApplyPower(BetterDefectMobileCompatibility.ReviewedPowerType(
+                    "BetterDefect.Cards.BdLockOnPower"), target,
+                    card.DynamicVars.Vulnerable.IntValue, owner);
                 break;
             case Bash or BeamCell or Break or Assassinate or Tremble or Fear or Squash or Taunt when target != null:
                 combat.Apply<VulnerablePower>(target, card.DynamicVars.Vulnerable.IntValue, owner);

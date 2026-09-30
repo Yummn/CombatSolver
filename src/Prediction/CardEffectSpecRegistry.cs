@@ -138,7 +138,8 @@ internal static class CardEffectSpecRegistry
         CardModel card = playedCard.Preview;
         Creature ownerCreature = playedCard.Preview.Owner.Creature;
         bool applied = false;
-        if (!(card is Rebound && BetterDefectMobileCompatibility.IsTransformed<Rebound>())
+        if (!(card is Synthesis && BetterDefectMobileCompatibility.IsTransformed<Synthesis>())
+            && !(card is Rebound && BetterDefectMobileCompatibility.IsTransformed<Rebound>())
             && !(card is Hyperbeam && BetterDefectMobileCompatibility.IsTransformed<Hyperbeam>())
             && PowerEffects.TryGetValue(card.GetType(), out CardPowerEffect[]? effects))
         {
@@ -417,9 +418,12 @@ internal static class CardEffectSpecRegistry
             {
                 PredictedCard copy = playedCard.CreateClone();
                 copy.MutablePreview.EnergyCost.SetThisCombat(0);
+                bool transformed = BetterDefectMobileCompatibility.IsTransformed<AdaptiveStrike>();
+                if (transformed)
+                    copy.MutablePreview.AddKeyword(CardKeyword.Ethereal);
                 simulator.AddGeneratedCardToCombat(
                     copy,
-                    PileType.Discard,
+                    transformed ? PileType.Draw : PileType.Discard,
                     card.Owner,
                     resultKind: CardGenerationResultKind.Fixed);
                 applied = true;

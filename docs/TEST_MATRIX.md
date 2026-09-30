@@ -1,5 +1,14 @@
 # CombatSolver 测试清单
 
+## BetterDefect 完整类型准入 / PC v0.111.0 定向实战（2026-09-30）
+
+- Steam 本机游戏已切换 `public-beta`，BuildID `24724944`，实际载荷 v0.111.0；隔离无头夹具只加载 RitsuLib 0.6.2、BetterDefect 0.11.66、CombatSolver 本分支。Android ADB 未连接，本节不写作真机结果。
+- 79 种百科大全改造逐张在首轮短搜要求 `expectedInitialUnmirroredCount=0`：原名单 62 种中 54 项首次通过、6 项未出结果/启动失败经逐项重试通过，`WHITE_NOISE` 与 `SPINNER` 两项真实风险经修复后分别完成全自动出牌。新增的 17 种先行 3 项及剩余 14 项均完成零未镜像首轮搜索。旧结果与逐项重试保存在本机 `.pc-v111-bd-compat-test/betterdefect-remaining-transformations-results.json`、`betterdefect-failed-transformations-retest-results.json` 等文件；首次失败不能当成通过。
+- 原先缺失的 14 张 `Bd*` 自定义卡：13 项首轮零未镜像通过；`BdBullseye` 的单独夹具在进程启动前未产结果，随后改造/未改造完整自动出牌均通过。原先已支持的 9 张合计为 23 张有明确镜像入口。
+- 真实自动出牌夹具覆盖 `BD_FISSION+`（2 电球）、`BD_ELECTRODYNAMICS`、`BD_BULLSEYE`（改造/未改造）、`BD_REPROGRAM+`（3 电球）、`SYNTHESIS+`、`SKIM`、`BD_DOOM_AND_GLOOM`、`HAILSTORM`、`WHITE_NOISE`、`SPINNER+`、`BD_MELTER`（改造/未改造，怪物有 10 格挡及 Hand Drill），及此前的 `BD_CORE_SURGE` / `RIP_AND_TEAR`；测试结果为 `Passed`，对应战斗日志 `REPLAN_SUMMARY state_mismatch=0`。只证明这些输入下的搜索、原生部署和状态核对；不等于 79 张全部升级/附魔/多模组组合完成差分。
+- `WHITE_NOISE` 原来把已建模的三选一仍标记 `UnresolvedPlayerChoice`，使保护性部署拒绝；`SPINNER` 原来把只安装玻璃球原生回调的 Power 误报未镜像。两项均先取得失败结果，修复后实战通过。`BdMelter` 的破盾事件现在走统一 `AfterBlockBroken` 镜像，并由带格挡/遗物场景覆盖。
+- `docs/mobile-betterdefect-card-coverage-audit-20260930.md` 列出证据边界与尚未在手机验证的项；本节覆盖历史 PC v0.107.1 无法测试的技术限制，但不倒改当时的历史证据。
+
 ## 手机内存条口径（2026-09-30）
 
 - 失败截图：搜索进行中显示「进程 1.1 GB / 搜索总可用 0.3 GB」。静态追踪表明 Android 物理内存 fallback 使用 GC 内存值计算动态分母，与手机新增托管堆 4 GB 软预算无关。

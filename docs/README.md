@@ -1,6 +1,7 @@
 # CombatSolver 文档导航
 
 - [Android v0.111.0 完整控制移植预览](MOBILE_PORT_V111.md)：真机验收范围、平台限制及 BetterDefect 预测适配门槛。
+- [BetterDefect v0.11.66 / v0.111.0 适配清点](mobile-betterdefect-card-coverage-audit-20260930.md)：23 张自定义卡、79 项改造、PC 同版本实战证据及手机待验边界。
 
 - [更优世界线逐包策略记录](strategy/strategy-optimization-20260923.md)：逐包同根基线、人工对照和优化结果。
 - [策略优化 Part 1 交接](strategy/strategy-optimization-part1-handoff-20260927.md)：实验开关、已测作用、剩余包与继续排查口径。

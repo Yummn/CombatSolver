@@ -1,6 +1,8 @@
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Powers;
+using MegaCrit.Sts2.Core.Models.Cards;
+using MegaCrit.Sts2.Core.Models.Orbs;
 using MegaCrit.Sts2.Core.Models.Relics;
 using CombatSolver.Engine.Common;
 using CombatSolver.Engine.Common.Mirrors;
@@ -26,6 +28,18 @@ internal static class ModifyEnergyCostInCombatMirrors
 
     public static decimal Invoke(AbstractModel listener, ModifyEnergyCostInCombatMirrorContext context)
     {
+        if (listener is CardModel forceField
+            && forceField.GetType().FullName == "BetterDefect.Cards.BdForceField"
+            && BetterDefectMobileCompatibility.CanMirrorCustomCard(forceField)
+            && (ReferenceEquals(forceField, context.Card.Original)
+                || ReferenceEquals(forceField, context.Card.Preview)))
+            return Math.Max(0m, context.Cost - BetterDefectMobileCompatibility.CombatCounter(
+                context.Simulator, forceField.Owner, "Powers"));
+        if (listener is Refract source && context.Card.Preview is Refract card
+            && ReferenceEquals(source.Owner, card.Owner)
+            && BetterDefectMobileCompatibility.IsTransformed<Refract>()
+            && context.State.GetPlayerCombatState(card.Owner).OrbQueue.Orbs.Any(orb => orb is GlassOrb))
+            return Math.Min(context.Cost, 2m);
         if (Registry.TryInvokeRegistered(listener, context, out var result))
         {
             return result.Value;

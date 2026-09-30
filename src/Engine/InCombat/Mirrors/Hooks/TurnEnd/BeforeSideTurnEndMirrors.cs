@@ -162,6 +162,13 @@ internal static class BeforeSideTurnEndMirrors
 
         var frostCount = context.State.GetPlayerCombatState(player).OrbQueue.Orbs
             .Count(static orb => orb is FrostOrb);
+        if (BetterDefectMobileCompatibility.IsTransformed<Hailstorm>())
+        {
+            for (int i = 0; i < frostCount && !context.Simulator.HasPendingChoice; i++)
+                context.Simulator.Damage(context.State.HittableEnemies,
+                    power.Amount, ValueProp.Unpowered, power.Owner);
+            return;
+        }
         if (frostCount >= power.DynamicVars[HailstormPower.frostOrbKey].IntValue)
         {
             context.Simulator.Damage(context.State.HittableEnemies, power.Amount, ValueProp.Unpowered, power.Owner);
