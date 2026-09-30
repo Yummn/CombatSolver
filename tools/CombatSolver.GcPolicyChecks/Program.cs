@@ -10,7 +10,10 @@ else if (args is ["recovery-lifecycle"])
 else if (args is ["recovery"])
     GcRecoveryChecks.Run();
 else if (args is ["memory"])
+{
     PolicyCheck.Run("player trace memory accounting", GcMemoryBudgetChecks.Run);
+    PolicyCheck.Run("mobile managed heap soft budget", GcMemoryBudgetChecks.RunMobileSoftBudget);
+}
 else if (args is ["checkpoint"])
     PolicyCheck.Run("actual checkpoint resume and cancel", GcCheckpointChecks.Run);
 else if (args is ["parallelism"])

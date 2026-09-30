@@ -38,6 +38,24 @@ internal static class GcMemoryBudgetChecks
         Console.WriteLine($"MEMORY_ACCOUNTING_OK reusable={reusable} capacity={capacity}; physical pressure, configured cap, allocation reuse and probe lifetime passed.");
     }
 
+    public static void RunMobileSoftBudget()
+    {
+        SearchMemoryPressureSignal signal = new();
+        Require(!signal.IsManagedHeapBudgetReached,
+            "An unconfigured search must not be memory-truncated.");
+        signal.ConfigureManagedHeapBudget(1);
+        byte[] held = new byte[8 * 1024 * 1024];
+        Require(signal.IsManagedHeapBudgetReached && signal.ManagedHeapGrowthBytes > 0,
+            "A live allocation beyond the per-search budget must stop new work.");
+        GC.KeepAlive(held);
+        signal.Disable();
+        Require(!signal.IsManagedHeapBudgetReached
+                && signal.ManagedHeapBudgetBytes == long.MaxValue,
+            "The next request must not inherit the previous search's memory budget.");
+        PolicyCheck.Throws<ArgumentOutOfRangeException>(
+            () => signal.ConfigureManagedHeapBudget(0));
+    }
+
     private static void Require(bool condition, string message)
     {
         if (!condition) throw new InvalidOperationException(message);

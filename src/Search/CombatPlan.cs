@@ -62,6 +62,8 @@ internal enum SearchBoundaryReason
     TimeLimit,
     /// <summary>搜索内连续回收未腾出余量，本成员发布当前前沿后停止。</summary>
     MemoryNoProgress,
+    /// <summary>本次移动端搜索的托管堆增量达到配置的软上限。</summary>
+    MemoryBudget,
 }
 
 internal enum SolverResultScope

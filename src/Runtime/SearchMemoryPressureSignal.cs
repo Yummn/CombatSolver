@@ -47,6 +47,8 @@ internal sealed class SearchMemoryPressureSignal
     private Action<long, CancellationToken>? _noGcRecoveryProbe;
     private Action<long>? _noGcFallbackObserver;
     private int _noGcRecoveryAllowed;
+    private long _managedHeapBytesAtStart;
+    private long _managedHeapBudgetBytes = long.MaxValue;
 
     public int ReclaimCount { get; private set; }
 
@@ -112,6 +114,22 @@ internal sealed class SearchMemoryPressureSignal
 
     public long AllocatedBytes
         => Math.Max(0, GC.GetTotalAllocatedBytes(precise: false) - Volatile.Read(ref _allocatedBytesAtStart));
+
+    internal long ManagedHeapBudgetBytes => Volatile.Read(ref _managedHeapBudgetBytes);
+
+    internal long ManagedHeapGrowthBytes => Math.Max(0,
+        GC.GetTotalMemory(forceFullCollection: false) - Volatile.Read(ref _managedHeapBytesAtStart));
+
+    internal bool IsManagedHeapBudgetReached
+        => ManagedHeapBudgetBytes != long.MaxValue
+           && ManagedHeapGrowthBytes >= ManagedHeapBudgetBytes;
+
+    internal void ConfigureManagedHeapBudget(long budgetBytes)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(budgetBytes);
+        Volatile.Write(ref _managedHeapBytesAtStart, GC.GetTotalMemory(forceFullCollection: false));
+        Volatile.Write(ref _managedHeapBudgetBytes, budgetBytes);
+    }
 
     public long AllocationLimitBytes => Volatile.Read(ref _allocationLimitBytes);
 
@@ -320,6 +338,7 @@ internal sealed class SearchMemoryPressureSignal
 
     private void DisableLimits()
     {
+        Volatile.Write(ref _managedHeapBudgetBytes, long.MaxValue);
         Volatile.Write(ref _allocationLimitBytes, long.MaxValue);
         Volatile.Write(ref _memoryLoadBytesAtStart, 0);
         Volatile.Write(ref _systemMemoryLimitBytes, long.MaxValue);

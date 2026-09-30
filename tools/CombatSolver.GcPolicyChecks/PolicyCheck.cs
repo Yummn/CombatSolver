@@ -56,3 +56,11 @@ internal static class UnattendedTestRunner
 {
     public static bool IsActive { get; set; }
 }
+
+// The standalone GC-policy harness links SearchGcPolicy without game settings.
+// Production MobilePortPolicy is compiled by the full mod build instead.
+internal static class MobilePortPolicy
+{
+    public static bool IsMobile => false;
+    public const long SearchManagedHeapBudgetBytes = 4_000_000_000L;
+}

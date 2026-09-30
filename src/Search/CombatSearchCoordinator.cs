@@ -1443,7 +1443,8 @@ internal static partial class CombatSearchCoordinator
             // 被内存回收提前截断的结果同理。
             bool comparable = terminal
                 || memberResult.BoundaryReason is not (SearchBoundaryReason.NodeLimit
-                    or SearchBoundaryReason.MemoryNoProgress);
+                    or SearchBoundaryReason.MemoryNoProgress
+                    or SearchBoundaryReason.MemoryBudget);
             if (experiment != null && baselineObserved && pendingFeatures != null)
             {
                 bool improved = comparable && incumbent != null
@@ -1484,7 +1485,8 @@ internal static partial class CombatSearchCoordinator
                 memberResult.PotionCount)
             {
                 StopPortfolio = memberResult.ResultScope != SolverResultScope.SearchCompletion,
-                MemoryTruncated = memberResult.BoundaryReason == SearchBoundaryReason.MemoryNoProgress,
+                MemoryTruncated = memberResult.BoundaryReason is
+                    SearchBoundaryReason.MemoryNoProgress or SearchBoundaryReason.MemoryBudget,
             };
         }
 

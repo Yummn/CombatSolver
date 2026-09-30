@@ -205,7 +205,24 @@ internal sealed partial class CombatBeamSolver
         bool timeBudgetReached = false;
         // 连续无进展的内存回收已用尽本搜索的额度：提前收手，交给既有终局发布当前前沿的最优路线。
         bool memoryNoProgressTruncated = false;
+        bool managedHeapBudgetTruncated = false;
         bool acceptableBattleHpLossReached = false;
+
+        bool ObserveManagedHeapBudget(string stage)
+        {
+            SearchMemoryPressureSignal signal = policy.MemoryPressureSignal;
+            if (!signal.IsManagedHeapBudgetReached)
+                return false;
+            if (!managedHeapBudgetTruncated)
+            {
+                managedHeapBudgetTruncated = true;
+                policy.Diagnostics.Info(
+                    $"[CombatSolver/Mobile] SEARCH_MANAGED_HEAP_BUDGET_STOP " +
+                    $"stage={stage} growth={signal.ManagedHeapGrowthBytes} " +
+                    $"budget={signal.ManagedHeapBudgetBytes} expanded={_run.Expanded}");
+            }
+            return true;
+        }
 
         SolverInterimResult SummarizeCandidate(SearchNode node, bool won)
         {
@@ -457,6 +474,7 @@ internal sealed partial class CombatBeamSolver
             int candidateSearchedTurnLayers,
             bool candidateTimeBudgetReached,
             bool candidateMemoryNoProgress = false,
+            bool candidateManagedHeapBudget = false,
             IReadOnlyList<PlanAction>? routeAdoptionActions = null)
         {
             SearchMeasurement finalMeasurement = _run.Performance.Begin();
@@ -525,6 +543,8 @@ internal sealed partial class CombatBeamSolver
                 // 就把截断成员重新放回整条选优。
                 if (candidateMemoryNoProgress)
                     boundary = SearchBoundaryReason.MemoryNoProgress;
+                else if (candidateManagedHeapBudget)
+                    boundary = SearchBoundaryReason.MemoryBudget;
                 else if (boundary == SearchBoundaryReason.None && candidateTimeBudgetReached)
                     boundary = SearchBoundaryReason.TimeLimit;
                 else if (boundary == SearchBoundaryReason.None && _run.Expanded >= _profile.MaxExpandedNodes)
@@ -1472,9 +1492,12 @@ internal sealed partial class CombatBeamSolver
                 || searchedTurnLayers < SolverWeights.IncrementalVerificationMaxTurns)
             && _run.Expanded < _profile.MaxExpandedNodes
             && !timeBudgetReached
-            && !memoryNoProgressTruncated)
+            && !memoryNoProgressTruncated
+            && !managedHeapBudgetTruncated)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            if (ObserveManagedHeapBudget("before_turn_layer"))
+                break;
             List<SearchNode> active = frontier.Where(node => !node.IsTerminal).ToList();
             foreach (SearchNode terminal in frontier.Where(node => node.IsTerminal))
                 completed.Add(terminal);
@@ -1517,7 +1540,8 @@ internal sealed partial class CombatBeamSolver
                  playDepth++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                if (memoryNoProgressTruncated)
+                if (ObserveManagedHeapBudget("before_play_depth")
+                    || memoryNoProgressTruncated || managedHeapBudgetTruncated)
                 {
                     // 和时间预算同一条收尾路径：把当前前沿推进到回合末，再由既有终局发布；
                     // 外层回合层循环随标志一起退出，不再往下搜新回合。
@@ -1783,9 +1807,12 @@ internal sealed partial class CombatBeamSolver
                 {
                     while (activeIndex < active.Count
                            && !acceptableBattleHpLossReached
-                           && !memoryNoProgressTruncated)
+                           && !memoryNoProgressTruncated
+                           && !managedHeapBudgetTruncated)
                     {
                         cancellationToken.ThrowIfCancellationRequested();
+                        if (ObserveManagedHeapBudget("before_serial_parent"))
+                            break;
                         ExpandNextSerially();
                         if (_run.Expanded >= _profile.MaxExpandedNodes)
                             break;
@@ -1796,9 +1823,12 @@ internal sealed partial class CombatBeamSolver
                     while (activeIndex < active.Count
                            && !acceptableBattleHpLossReached
                            && _run.Expanded < _profile.MaxExpandedNodes
-                           && !memoryNoProgressTruncated)
+                           && !memoryNoProgressTruncated
+                           && !managedHeapBudgetTruncated)
                     {
                         cancellationToken.ThrowIfCancellationRequested();
+                        if (ObserveManagedHeapBudget("before_parallel_wave"))
+                            break;
                         int remainingBudget = _profile.MaxExpandedNodes - _run.Expanded;
                         if (remainingBudget <= 1)
                         {
@@ -1946,7 +1976,8 @@ internal sealed partial class CombatBeamSolver
                 }
                 // All lanes are drained. Probe in canonical child order so early success cannot
                 // consume a different number of already-dispatched parents at different DOPs.
-                if (!acceptableBattleHpLossReached && !memoryNoProgressTruncated)
+                if (!acceptableBattleHpLossReached && !memoryNoProgressTruncated
+                    && !managedHeapBudgetTruncated)
                 {
                     int ordinaryCandidateCount = nextPlays.Count;
                     for (int replayIndex = 0; replayIndex < ordinaryCandidateCount; replayIndex++)
@@ -1967,6 +1998,7 @@ internal sealed partial class CombatBeamSolver
                     {
                         if (_run.Expanded >= _profile.MaxExpandedNodes || acceptableBattleHpLossReached
                             || memoryNoProgressTruncated
+                            || managedHeapBudgetTruncated
                             || !policy.VerifyIncrementalSearch
                                 && stopwatch.ElapsedMilliseconds >= _profile.SoftTimeBudgetMilliseconds)
                             break;
@@ -2225,7 +2257,8 @@ internal sealed partial class CombatBeamSolver
                     : SolverResultScope.SearchCompletion,
                 searchedTurnLayers,
                 timeBudgetReached,
-                memoryNoProgressTruncated);
+                memoryNoProgressTruncated,
+                managedHeapBudgetTruncated);
         }
         finally
         {

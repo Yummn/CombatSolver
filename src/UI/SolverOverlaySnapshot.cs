@@ -630,6 +630,8 @@ internal sealed record SolverOverlaySnapshot(
             => SolverText.Get("计算尚未彻底穷尽，已达到当前设置的【时间上限】；现展示目前找到的最佳路线。若想探索更优世界线，可在 设置 > 性能 中提高上限后重新计算。"),
         SearchBoundaryReason.NodeLimit
             => SolverText.Get("计算尚未彻底穷尽，已达到当前设置的【节点上限】；现展示目前找到的最佳路线。若想探索更优世界线，可在 设置 > 性能 中提高上限后重新计算。"),
+        SearchBoundaryReason.MemoryBudget
+            => SolverText.Get("本次搜索新增托管堆达到手机端 4 GB 软预算；已停止扩展并展示目前找到的路线。"),
         _ => null,
     };
 
@@ -644,6 +646,7 @@ internal sealed record SolverOverlaySnapshot(
         SearchBoundaryReason.NodeLimit => SolverText.Get("节点上限"),
         SearchBoundaryReason.TurnLimit => SolverText.Get("回合上限"),
         SearchBoundaryReason.TimeLimit => SolverText.Get("时间预算"),
+        SearchBoundaryReason.MemoryBudget => SolverText.Get("内存预算"),
         _ => SolverText.Get("战斗结束"),
     };
 

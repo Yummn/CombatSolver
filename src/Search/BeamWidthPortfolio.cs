@@ -46,7 +46,8 @@ internal readonly record struct BeamWidthPortfolioRun<TResult>(
     public bool StopPortfolio { get; init; }
 
     /// <summary>
-    /// 该成员被连续无进展的内存回收提前截断（见 <see cref="SearchBoundaryReason.MemoryNoProgress" />）。
+    /// 该成员被连续无进展的内存回收或托管堆预算提前截断
+    /// （见 <see cref="SearchBoundaryReason.MemoryNoProgress" /> / <see cref="SearchBoundaryReason.MemoryBudget" />）。
     /// 它仍可作回退结果发布，但不能像完整结果那样参与成员间的整条选优。
     /// </summary>
     public bool MemoryTruncated { get; init; }

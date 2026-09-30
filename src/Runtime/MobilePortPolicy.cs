@@ -6,6 +6,10 @@ namespace CombatSolver;
 /// </summary>
 internal static class MobilePortPolicy
 {
+    // Soft limit on managed heap growth during one Android search request.
+    // Android does not support the desktop No-GC reservation, so changing that
+    // setting alone would not constrain mobile search memory.
+    internal const long SearchManagedHeapBudgetBytes = 4_000_000_000L;
 #if COMBAT_SOLVER_MOBILE
     internal static readonly bool IsMobile = true;
 #else

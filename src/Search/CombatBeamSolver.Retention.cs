@@ -1942,7 +1942,7 @@ internal sealed partial class CombatBeamSolver
             SearchBoundaryReason.None => 0,
             SearchBoundaryReason.NoCards or SearchBoundaryReason.Shuffle
                 or SearchBoundaryReason.TurnLimit or SearchBoundaryReason.NodeLimit
-                or SearchBoundaryReason.TimeLimit => 1,
+                or SearchBoundaryReason.TimeLimit or SearchBoundaryReason.MemoryBudget => 1,
             SearchBoundaryReason.PendingChoice => 2,
             SearchBoundaryReason.UnsupportedEffect => 3,
             SearchBoundaryReason.EventDefeat => 4,

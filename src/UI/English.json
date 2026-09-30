@@ -310,6 +310,8 @@
   "节点上限": "Node limit",
   "回合上限": "Turn limit",
   "时间预算": "Time budget",
+  "内存预算": "Memory budget",
+  "本次搜索新增托管堆达到手机端 4 GB 软预算；已停止扩展并展示目前找到的路线。": "This search reached the mobile 4 GB soft budget for managed-heap growth. Expansion stopped; showing the best route found so far.",
   "{0} 等 {1} 项（完整列表见日志）": "{0} and {1} items in total (full list in logs)",
   "当前没有药水": "No potions",
   "该药水不可指定使用策略": "This potion has no selectable use policy",

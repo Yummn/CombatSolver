@@ -1,5 +1,10 @@
 # CombatSolver 测试清单
 
+## 手机搜索托管堆 4 GB 软预算（2026-09-30）
+
+- Android v0.111.0 Release 编译通过（0 警告／0 错误）；`CombatSolver.GcPolicyChecks -- memory` 通过 2 项（包括超小预算触发、请求结束清理与非法预算拒绝）；结构门禁与 `git diff --check` 通过。
+- 未连接 ADB；没有真机制造 4 GB 活堆、实战路线质量或 FPS 对照。PC v0.107.1 不能作为 v0.111.0 完整求解器运行验证。此预算为搜索新增托管堆的边界检查，不保证总进程内存不超过 4 GB。
+
 ## 手机 v0.111.0 界面简化（2026-09-30）
 
 - Android v0.111.0 Release 编译通过（0 警告、0 错误）；`verify-refactor-boundaries.ps1` 通过（`search_files=213`），`git diff --check` 通过。以上不等于真机观感或交互验收。

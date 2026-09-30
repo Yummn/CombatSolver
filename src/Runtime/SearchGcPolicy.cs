@@ -681,6 +681,14 @@ internal static partial class SearchGcPolicy
                     _activeSearches++;
                     _defaultGcSearches++;
                     memoryPressureSignal.Disable();
+                    if (MobilePortPolicy.IsMobile)
+                    {
+                        memoryPressureSignal.ConfigureManagedHeapBudget(
+                            MobilePortPolicy.SearchManagedHeapBudgetBytes);
+                        Entry.Logger.Info(
+                            $"[CombatSolver/Mobile] SEARCH_MANAGED_HEAP_BUDGET " +
+                            $"bytes={memoryPressureSignal.ManagedHeapBudgetBytes}");
+                    }
                     Entry.Logger.Info(
                         "[CombatSolver/Test] GC_LATENCY policy=clr_default no_gc_enabled=false");
                     return new DefaultGcSearchScope(lifecycleAtEntry);
