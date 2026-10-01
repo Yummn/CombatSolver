@@ -1,5 +1,13 @@
 # CombatSolver 测试清单
 
+## BetterDefect 白卡、发现与燃料 / PC v0.111.0（2026-10-02）
+
+- 隔离 PC 游戏 v0.111.0 仅启用 RitsuLib 0.6.2、BetterDefect 0.11.66、CombatSolver MobileTest。`test-discovery-fuel.ps1` 的发现、普通燃料、压缩改造燃料及其升级版均实际出牌并得到 `Passed`；`test-stack-helix.ps1` 的未改造堆栈、螺旋钻击均实际出牌并得到 `Passed`。
+- `test-common-cards.ps1` 覆盖此前整理的 25 张故障机器人普通牌，以及改造后变普通的回收，26/26 首轮短搜最终 `Passed`。`TURBO`、`BARRAGE`、`GUNK_UP` 首次无结果，单独重试通过；`STACK` 初次暴露真实异常，修复后通过。脚本要求 `expectedInitialUnmirroredCount=0` 且在首轮搜索结果后停止，**不证明 26 张都已实际打出**。
+- 追加 `test-common-card-differential.ps1` 把上述 26 张逐一注入 PC 原生战斗，逐张实际出牌并比较模拟前后完整状态，7 个分组最终全部 `Passed`。`UPROAR` 和 `BOOST_AWAY` 初次失败均为夹具目标设置错误，更正后通过；这项验证覆盖了白卡基础牌面与改造后回收，但没有逐项覆盖升级、附魔、其他 Mod 组合。
+- 发现的生成牌池先在主线程按实际单人战斗候选集审阅；池内出现未知模组牌或未镜像改造时仍拒绝。燃料测试覆盖正常、压缩改造、改造升级三种出牌路径；本轮没有对所有随机生成结果与任意附魔组合逐项验收。
+- 证据位于本机 `../.pc-v111-bd-compat-test/`。ADB 当前无设备，本轮未在 Android v0.111.0 安装或测试；PC 同版本结果不等于 Android Ritsu 回调验证。
+
 ## BetterDefect 完整类型准入 / PC v0.111.0 定向实战（2026-09-30）
 
 - Steam 本机游戏已切换 `public-beta`，BuildID `24724944`，实际载荷 v0.111.0；隔离无头夹具只加载 RitsuLib 0.6.2、BetterDefect 0.11.66、CombatSolver 本分支。Android ADB 未连接，本节不写作真机结果。

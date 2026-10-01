@@ -135,8 +135,11 @@ internal static class OrbCardMirrors
 
     public static void HelixDrillOnPlay(HelixDrill card, CardOnPlayMirrorContext context)
     {
-        int hits = context.Card.ResolveEnergyXValue(context.State);
-        if (BetterDefectMobileCompatibility.IsTransformed<HelixDrill>() && hits >= 4)
+        int hits = card.EnergyCost.CostsX
+            ? context.Card.ResolveEnergyXValue(context.State)
+            : (int)context.Calculate(card.DynamicVars["CalculatedHits"]);
+        if (card.EnergyCost.CostsX && BetterDefectMobileCompatibility.IsTransformed<HelixDrill>()
+            && hits >= 4)
             hits *= 2;
         if (hits > 0)
             context.AttackSingle(hitCount: hits);

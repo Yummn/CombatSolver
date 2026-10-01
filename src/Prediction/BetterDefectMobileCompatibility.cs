@@ -16,6 +16,7 @@ using CombatSolver.Engine.Common;
 using CombatSolver.Engine.Common.Mirrors;
 using CombatSolver.Engine.InCombat.Mirrors;
 using CombatSolver.Engine.InCombat.Mirrors.Cards.OnPlay;
+using CombatSolver.Engine.InCombat.Extensions;
 using CombatSolver.Engine.InCombat.Simulation;
 
 namespace CombatSolver;
@@ -165,6 +166,7 @@ internal static class BetterDefectMobileCompatibility
     private static HashSet<Type> _transformedTypes = [];
     private static HashSet<Type> _unmirroredTransformedTypes = [];
     private static int _transformedTypesInCombat;
+    private static bool _generationPoolReviewed;
 
     internal static bool ColdSnapTransformed =>
         IsTransformed<ColdSnap>();
@@ -278,7 +280,9 @@ internal static class BetterDefectMobileCompatibility
             && patchType.Assembly == assembly
             && patchType.FullName?.StartsWith("BetterDefect.", StringComparison.Ordinal) == true
             && cardType is not null
-            && (MirroredTransformations.Contains(cardType)
+            && (cardType == typeof(Fuel)
+                    && patchType.FullName == "BetterDefect.BdCardVersionFuelPlayPatch"
+                || MirroredTransformations.Contains(cardType)
                 || MirroredCustomCards.Contains(cardType.FullName ?? ""));
     }
 
@@ -297,6 +301,7 @@ internal static class BetterDefectMobileCompatibility
             Volatile.Write(ref _transformedTypes, []);
             Volatile.Write(ref _transformedTypesInCombat, 0);
             Volatile.Write(ref _unmirroredTransformedTypes, []);
+            Volatile.Write(ref _generationPoolReviewed, false);
             Volatile.Write(ref _activeAssembly, null);
             return;
         }
@@ -334,6 +339,7 @@ internal static class BetterDefectMobileCompatibility
             throw Unsupported($"读取改造状态失败：{error.GetType().Name}");
         }
 
+        bool generationPoolReviewed = ReviewGenerationPools(combat, assembly, transformed);
         HashSet<Type> transformedInCombat = [];
         foreach (var player in combat.Players)
         {
@@ -341,13 +347,13 @@ internal static class BetterDefectMobileCompatibility
             RootCounters.Add(player, ReadNativeCombatCounters(assembly, player));
             foreach (CardModel card in player.Deck.Cards)
             {
-                ValidateCard(card, assembly, transformed);
+                ValidateCard(card, assembly, transformed, generationPoolReviewed);
                 if (transformed.Contains(card.GetType()) && !MirroredTransformations.Contains(card.GetType()))
                     transformedInCombat.Add(card.GetType());
             }
             foreach (CardModel card in player.PlayerCombatState?.AllCards ?? [])
             {
-                ValidateCard(card, assembly, transformed);
+                ValidateCard(card, assembly, transformed, generationPoolReviewed);
                 if (transformed.Contains(card.GetType()) && !MirroredTransformations.Contains(card.GetType()))
                     transformedInCombat.Add(card.GetType());
             }
@@ -370,6 +376,7 @@ internal static class BetterDefectMobileCompatibility
         Volatile.Write(ref _transformedTypes, transformed);
         Volatile.Write(ref _unmirroredTransformedTypes, unmirrored);
         Volatile.Write(ref _transformedTypesInCombat, transformedInCombat.Count);
+        Volatile.Write(ref _generationPoolReviewed, generationPoolReviewed);
         Volatile.Write(ref _activeAssembly, assembly);
         foreach (PowerModel power in combat.Creatures.SelectMany(creature => creature.Powers))
         {
@@ -404,7 +411,8 @@ internal static class BetterDefectMobileCompatibility
         Assembly? assembly = Volatile.Read(ref _activeAssembly);
         if (assembly is not null)
         {
-            ValidateCard(card, assembly, Volatile.Read(ref _transformedTypes));
+            ValidateCard(card, assembly, Volatile.Read(ref _transformedTypes),
+                Volatile.Read(ref _generationPoolReviewed));
             if (Volatile.Read(ref _unmirroredTransformedTypes).Contains(card.GetType()))
                 Reject($"改造牌 {card.GetType().Name} 尚未建立预测镜像");
         }
@@ -1021,12 +1029,36 @@ internal static class BetterDefectMobileCompatibility
         => MobilePortPolicy.IsMobile && Volatile.Read(ref _activeAssembly) is not null
             && Volatile.Read(ref _transformedTypes).Contains(card.GetType());
 
-    private static void ValidateCard(CardModel card, Assembly assembly, IReadOnlySet<Type> transformed)
+    private static bool ReviewGenerationPools(CombatState combat, Assembly assembly,
+        IReadOnlySet<Type> transformed)
+    {
+        bool Reviewed(CardModel card)
+        {
+            Type type = card.GetType();
+            return (type.Assembly == typeof(CardModel).Assembly
+                    || type.Assembly == assembly && MirroredCustomCards.Contains(type.FullName ?? ""))
+                && (!transformed.Contains(type) || MirroredTransformations.Contains(type)
+                    || MirroredCustomCards.Contains(type.FullName ?? ""));
+        }
+
+        foreach (Player player in combat.Players)
+        {
+            if (player.GetUnlockedCharacterCards(CardMultiplayerConstraint.SingleplayerOnly)
+                    .FilterForCombatAndPlayerCount(CardMultiplayerConstraint.SingleplayerOnly)
+                    .Any(card => !Reviewed(card)))
+                return false;
+        }
+        return true;
+    }
+
+    private static void ValidateCard(CardModel card, Assembly assembly, IReadOnlySet<Type> transformed,
+        bool generationPoolReviewed)
     {
         Type type = card.GetType();
         if (type.Assembly == assembly && !MirroredCustomCards.Contains(type.FullName ?? ""))
             Reject($"卡牌 {type.Name} 的效果尚未适配");
         if (PotentialCardGenerators.Contains(type)
+            && !(type == typeof(Discovery) && generationPoolReviewed)
             && !(type == typeof(WhiteNoise) && transformed.Contains(type))
             && !(type == typeof(CreativeAi) && transformed.Contains(type))
             && !(type == typeof(HelloWorld) && transformed.Contains(type)))

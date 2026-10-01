@@ -221,7 +221,7 @@ internal static partial class CardOnPlayMirrors
         registry.Register<MegaCrit.Sts2.Core.Models.Cards.Stack>(static (card, context) =>
         {
             if (!BetterDefectMobileCompatibility.IsTransformed<MegaCrit.Sts2.Core.Models.Cards.Stack>())
-                context.GainBlock(card.Owner.Creature);
+                GeneralCardMirrors.GeneralBlockOnPlay(card, context);
         });
         registry.Register<Barrage>(static (card, context) =>
         {

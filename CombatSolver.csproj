@@ -24,7 +24,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <RootNamespace>CombatSolver</RootNamespace>
-    <Version>0.47.1</Version>
+    <Version>0.47.2</Version>
     <DefineConstants Condition="'$(CombatSolverMobilePort)' == 'true'">$(DefineConstants);COMBAT_SOLVER_MOBILE</DefineConstants>
     <DefineConstants Condition="'$(CombatSolverMobileTest)' == 'true'">$(DefineConstants);COMBAT_SOLVER_MOBILE_TEST</DefineConstants>
     <DefineConstants Condition="'$(VerifyHistoryCounters)' == 'true'">$(DefineConstants);VERIFY_HISTORY_COUNTERS</DefineConstants>
