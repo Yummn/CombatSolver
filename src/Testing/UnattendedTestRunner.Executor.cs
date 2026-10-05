@@ -705,6 +705,13 @@ internal sealed partial class UnattendedTestRunner
                 runner._completedChecks.Add(request.ScenarioId);
                 return Observation(combatEnded: false);
             }
+            if (request.ScenarioId == "SURPRISE-DEATH-SLOTS")
+            {
+                runner.SetStage("surprise_death_slots");
+                await runner.AssertSurpriseDeathSlotsAsync(combatState, player);
+                runner._completedChecks.Add(request.ScenarioId);
+                return Observation(combatEnded: false);
+            }
             if (request.ScenarioId == "DEATH-EFFECTS-ONCE")
             {
                 runner.SetStage("death_effects_once");

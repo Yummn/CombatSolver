@@ -117,7 +117,7 @@ internal static class BetterDefectMobileCompatibility
     [
         typeof(Abundance), typeof(BundleOfJoy), typeof(Distraction), typeof(Discovery),
         typeof(InfernalBlade), typeof(JackOfAllTrades), typeof(Jackpot), typeof(Largesse),
-        typeof(Havoc), typeof(Cascade), typeof(MadScience), typeof(ManifestAuthority),
+        typeof(Havoc), typeof(Cascade), typeof(ManifestAuthority),
         typeof(Metamorphosis), typeof(Quasar),
         typeof(Splash), typeof(Stoke), typeof(WhiteNoise), typeof(HelloWorld), typeof(CreativeAi)
     ];
@@ -266,8 +266,22 @@ internal static class BetterDefectMobileCompatibility
     }
 
     internal static bool CanSolverPlay(CardModel card)
-        => !MobilePortPolicy.IsMobile || Volatile.Read(ref _activeAssembly) is null
-            || !Volatile.Read(ref _unmirroredTransformedTypes).Contains(card.GetType());
+    {
+        if (!MobilePortPolicy.IsMobile || Volatile.Read(ref _activeAssembly) is not Assembly assembly)
+            return true;
+
+        Type type = card.GetType();
+        if (Volatile.Read(ref _unmirroredTransformedTypes).Contains(type))
+            return false;
+
+        // MadScience and similar native generators can put a BetterDefect card
+        // into the branch hand even when that card was not part of the root deck.
+        // Its identity is deterministic and safe to carry through prediction, but
+        // executing an unmirrored OnPlay would make the branch diverge. Keep the
+        // generated card visible and explicitly stop automatic play at this edge.
+        return type.Assembly != assembly
+            || MirroredCustomCards.Contains(type.FullName ?? "");
+    }
 
     // The reviewed BetterDefect build installs Harmony OnPlay prefixes on PC.
     // They are the native side of the explicit transformations mirrored here,

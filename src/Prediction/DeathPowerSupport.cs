@@ -89,6 +89,8 @@ internal static class DeathPowerSupport
                     combat.BeginReattach(simulator, dead);
                     break;
                 case SurprisePower:
+                    // Native SurprisePower assigns these stable slots even though
+                    // they are not part of the initial encounter roster.
                     Creature fat = MonsterSpawnSupport.Create<FatGremlin>(simulator, combat, "fat");
                     foreach (ThieveryPower thievery in combat.EffectivePowers()
                                  .OfType<ThieveryPower>()

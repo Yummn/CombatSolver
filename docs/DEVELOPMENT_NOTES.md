@@ -1,5 +1,11 @@
 # CombatSolver 开发笔记与未来构想
 
+## 0.47.2 当前修复（2026-10-06）
+
+- 修复移动端 BetterDefect 生成牌的保护边界：`MadScience` 不再因为“可能生成未适配卡牌”而在战斗根捕获阶段直接拒绝整场战斗。已建立镜像的 BetterDefect 卡仍可正常进入搜索；未建立镜像的 BetterDefect 卡保留在预测手牌中，但不会进入自动出牌候选，从而避免把未知 `OnPlay` 当作原版效果执行。该边界位于 `SimulatedCombatState.CanPlayCard` 之前的统一卡牌可玩性检查，覆盖普通自动出牌、回合计划和生成牌后续分支。
+- 修复 `SurprisePower` 死亡召唤槽位读取：预测侧使用原版固定槽名 `fat` 与 `sneaky`，不再把“初始遭遇槽位表没有这两个槽位”误判成字典缺键。新增 `SURPRISE-DEATH-SLOTS` 夹具，比较预测与原生 `FatGremlin` / `SneakyGremlin` 的类型和槽位。
+- 构建证据：STS2 v0.111.0、RitsuLib 0.6.2 的 Release 构建为 0 警告、0 错误；本次 DLL SHA-256 为 `B2BC1907789B3ED7A1F4DDA178C7E753F96E1B2D8E1A8EA7998C7F309BB4333B`。已有最小死亡召唤夹具结果为 `Passed`。本轮重新运行时，主机可用内存不足以接受默认 4 GiB 无头预约，1 GiB 并行预约进入快照阶段但未生成新场景结果；该资源门禁不计为行为通过，也不覆盖此前完整 Gremlin 搜索超时。
+
 ## BetterDefect 白卡、发现与燃料（2026-10-02，开发中）
 
 - 对照 BetterDefect v0.11.66 的实际卡池，在主线程核对故障机器人可生成牌均为原版或已有镜像的 BetterDefect 类型，且已启用的改造有镜像时，才允许“发现”进入搜索；未知模组牌和未镜像改造继续拒绝。该审阅结论随战斗根冻结，worker 不重新读取全局卡池。

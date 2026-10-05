@@ -1,5 +1,11 @@
 # CombatSolver 测试清单
 
+## BetterDefect 生成牌保护边界与死亡召唤槽位 / PC v0.111.0（2026-10-06）
+
+- `MadScience` 的移动端入口已从战斗启动时的全局拒绝列表移除。对同一 BetterDefect 程序集中未登记镜像的生成牌，求解器现在保留牌面但禁止自动出牌；已登记镜像的卡牌继续走正常预测与部署路径。该行为由 `SimulatedCombatState.CanPlayCard` 的统一候选门禁负责，静态覆盖了自动出牌与回合计划两条入口。
+- 新增 `SURPRISE-DEATH-SLOTS`：在 `GREMLIN_MERC_NORMAL` 中触发 `SurprisePower`，预测与原生均生成 `FatGremlin=fat`、`SneakyGremlin=sneaky`，场景结果 `Passed`。该场景只验证死亡召唤的类型和槽位，不代表完整 Gremlin 战斗搜索通过。
+- Release 构建（STS2 v0.111.0、RitsuLib 0.6.2）为 0 警告、0 错误，最终 DLL SHA-256 为 `B2BC1907789B3ED7A1F4DDA178C7E753F96E1B2D8E1A8EA7998C7F309BB4333B`。本轮补测受 PC 主机可用内存门禁影响，未生成新的 BetterDefect + MadScience 实战结果；此前完整 Gremlin 搜索达到 120 秒上限，保持未通过，不作为本节证据。
+
 ## BetterDefect 白卡、发现与燃料 / PC v0.111.0（2026-10-02）
 
 - 隔离 PC 游戏 v0.111.0 仅启用 RitsuLib 0.6.2、BetterDefect 0.11.66、CombatSolver MobileTest。`test-discovery-fuel.ps1` 的发现、普通燃料、压缩改造燃料及其升级版均实际出牌并得到 `Passed`；`test-stack-helix.ps1` 的未改造堆栈、螺旋钻击均实际出牌并得到 `Passed`。
