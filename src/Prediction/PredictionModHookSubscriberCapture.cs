@@ -228,7 +228,7 @@ internal sealed class PredictionModHookSubscriberCapture
         if (LoserEatDustMobileCompatibility.IsReviewedDeathHook(subscriber))
         {
             Entry.Logger.Info(
-                "[CombatSolver/Mobile] LOSER_EAT_DUST_DEATH_HOOK " +
+                $"[CombatSolver/Mobile] REVIEWED_NODE_DEATH_HOOK mod={manifest?.id} " +
                 "policy=terminal_loss_on_predicted_player_death");
             return;
         }

@@ -11,24 +11,33 @@ namespace CombatSolver;
 /// </summary>
 internal static class LoserEatDustMobileCompatibility
 {
-    private const string ModId = "LoserEatDust";
-    private const string HookTypeName = "LoserEatDust.LoserEatDustDeathHook";
-    private const string ReviewedVersion = "0.3.1";
     private const string ReviewedHooks = "AfterPreventingDeath,ShouldDieLate";
+
+    // NodeRewind renamed the same reviewed, detour-free death interceptor.
+    // Keep exact identity/version pairs: a matching hook name alone must not
+    // admit an unrelated assembly or a future unreviewed gameplay change.
+    private static readonly (string ModId, string HookTypeName, string Version)[] ReviewedHooksByMod =
+    [
+        ("LoserEatDust", "LoserEatDust.LoserEatDustDeathHook", "0.3.1"),
+        ("NodeRewind", "NodeRewind.NodeRewindDeathHook", "0.4.2"),
+    ];
 
     internal static bool IsReviewedDeathHook(AbstractModel subscriber)
     {
         if (!MobilePortPolicy.IsMobile || subscriber.GetType() is not { } type
-            || !string.Equals(type.FullName, HookTypeName, StringComparison.Ordinal)
             || type.BaseType != typeof(AbstractModel))
             return false;
 
         var mod = AssemblyInfo.ModForType(type, out bool isBaseGame);
         if (isBaseGame || mod?.manifest is not { } manifest
-            || !string.Equals(manifest.id, ModId, StringComparison.OrdinalIgnoreCase)
-            || !string.Equals(manifest.version?.ToString().TrimStart('v'),
-                ReviewedVersion, StringComparison.Ordinal)
             || !mod.assemblies.Contains(type.Assembly))
+            return false;
+
+        if (!ReviewedHooksByMod.Any(reviewed =>
+                string.Equals(manifest.id, reviewed.ModId, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(type.FullName, reviewed.HookTypeName, StringComparison.Ordinal)
+                && string.Equals(manifest.version?.ToString().TrimStart('v'),
+                    reviewed.Version, StringComparison.Ordinal)))
             return false;
 
         PredictionModHookSubscriberInertness.IsCombatInert(type, out string hooks);
