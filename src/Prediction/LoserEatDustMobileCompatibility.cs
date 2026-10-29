@@ -20,6 +20,7 @@ internal static class LoserEatDustMobileCompatibility
     [
         ("LoserEatDust", "LoserEatDust.LoserEatDustDeathHook", "0.3.1"),
         ("NodeRewind", "NodeRewind.NodeRewindDeathHook", "0.4.2"),
+        ("NodeRewind", "NodeRewind.NodeRewindDeathHook", "0.4.3"),
     ];
 
     internal static bool IsReviewedDeathHook(AbstractModel subscriber)
